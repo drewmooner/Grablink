@@ -550,7 +550,7 @@ export default function VideoDownloader() {
                         setResult(null);
                       }}
                       className="text-[#fb923c] hover:text-white hover:bg-[#fb923c] transition-all duration-200 text-xl sm:text-lg font-bold w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg bg-[#fb923c]/20 border-2 border-[#fb923c]/50 hover:border-[#fb923c] shadow-sm hover:shadow-md"
-                      title="Clear all"
+                      title="Clear URL"
                       aria-label="Clear URL"
                     >
                       ✕
