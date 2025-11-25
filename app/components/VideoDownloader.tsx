@@ -87,7 +87,7 @@ export default function VideoDownloader() {
       setScanning(true);
       scanTimeoutRef.current = setTimeout(async () => {
         try {
-          const response = await fetch("/api/video/info", {
+          const response = await fetch("https://resplendent-passion-production.up.railway.app/api/video/info", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ url: url.trim() }),
@@ -169,7 +169,7 @@ export default function VideoDownloader() {
 
     try {
       // Download (video info already scanned)
-      const downloadResponse = await fetch("/api/video/download", {
+      const downloadResponse = await fetch("https://resplendent-passion-production.up.railway.app/api/video/download", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -701,7 +701,7 @@ export default function VideoDownloader() {
                       setVideoInfo(null);
                       setScanning(true);
                       try {
-                        const response = await fetch("/api/video/info", {
+                        const response = await fetch("https://resplendent-passion-production.up.railway.app/api/video/info", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ url: url.trim() }),
