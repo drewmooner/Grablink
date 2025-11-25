@@ -5,6 +5,7 @@ nixPkgs = ["python3", "ffmpeg", "pip"]
 cmds = [
   "python3 -m pip install --upgrade pip --break-system-packages",
   "python3 -m pip install yt-dlp --break-system-packages",
+  "python3 -m yt_dlp --version || yt-dlp --version || echo 'Warning: yt-dlp verification failed'",
   "npm install"
 ]
 

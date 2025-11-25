@@ -33,11 +33,19 @@ export async function getYtDlpCommand(): Promise<string> {
     ytDlpCommand = "python3 -m yt_dlp";
     return ytDlpCommand;
   } catch {
-    // Neither works
+    // Neither works - try python -m yt_dlp (without 3)
+    try {
+      await execAsync("python -m yt_dlp --version", { timeout: 2000 });
+      ytDlpCommand = "python -m yt_dlp";
+      return ytDlpCommand;
+    } catch {
+      // All methods failed
+    }
   }
 
-  // Default to yt-dlp (will fail with clear error)
-  ytDlpCommand = "yt-dlp";
+  // If we get here, neither command works
+  // Return python3 -m yt_dlp as default since that's what we install via pip
+  ytDlpCommand = "python3 -m yt_dlp";
   return ytDlpCommand;
 }
 
