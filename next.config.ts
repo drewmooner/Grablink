@@ -9,16 +9,6 @@ const nextConfig: NextConfig = {
   },
   // For App Router, body size limits are set in route.ts files
   
-  // Ignore ESLint errors during build (Vercel deployment)
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  
-  // Ignore TypeScript errors during build (optional, but helpful for deployment)
-  typescript: {
-    ignoreBuildErrors: false,
-  },
-  
   // Turbopack configuration (Next.js 16 default)
   turbopack: {
     // Empty config - we handle FFmpeg path resolution manually at runtime
