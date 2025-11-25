@@ -96,38 +96,14 @@ export async function getVideoInfo(url: string): Promise<VideoInfoResponse> {
     // Ensure URL doesn't have double slashes in path (except after protocol)
     finalUrl = finalUrl.replace(/([^:]\/)\/+/g, "$1");
 
-    // Check if yt-dlp is available using the same detection logic
-    // getYtDlpCommand() already does the checking, so we just need to verify it works
-    try {
-      const detectedCommand = await getYtDlpCommand();
-      // Test the detected command
-      const testCmd = detectedCommand === "yt-dlp" 
-        ? "yt-dlp --version" 
-        : "python3 -m yt_dlp --version";
-      await execAsync(testCmd, { timeout: 5000 });
-      console.log("[getVideoInfo] yt-dlp is available via:", detectedCommand);
-    } catch (checkError: any) {
-      console.error("[getVideoInfo] yt-dlp not found or not accessible:", checkError);
-      const errorMessage = checkError.code === "ENOENT" 
-        ? "yt-dlp is not installed or not in PATH. Please install yt-dlp: pip install yt-dlp"
-        : `yt-dlp check failed: ${checkError.message}`;
-      
-      return {
-        success: false,
-        platform,
-        url,
-        qualities: [],
-        downloadOptions: {
-          recommendedMethod: "proxy",
-          supportsDirect: false,
-          supportsStreaming: true,
-        },
-        error: {
-          code: "YT_DLP_NOT_FOUND",
-          message: errorMessage,
-        },
-      };
-    }
+    // Get the yt-dlp command to use (getYtDlpCommand() already tests all available methods)
+    const ytDlpCmd = await getYtDlpCommand();
+    console.log("[getVideoInfo] Detected yt-dlp command:", ytDlpCmd);
+    
+    // If the default is still "yt-dlp" and it's not working, it means yt-dlp isn't installed
+    // But getYtDlpCommand() should have tried python3 -m yt_dlp first, so if we get here
+    // with "yt-dlp", it means that's what was detected. We'll proceed and let the actual
+    // command execution handle the error if it fails.
 
     // Use yt-dlp to get video info (JSON format) with proper URL escaping
     const command = await buildYtDlpCommand(finalUrl, {
