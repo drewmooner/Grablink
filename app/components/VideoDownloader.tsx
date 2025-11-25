@@ -520,24 +520,28 @@ export default function VideoDownloader() {
               Video URL
             </label>
             <div className="flex flex-col sm:flex-row gap-2">
-              <div className="flex-1 relative">
-                <input
-                  type="text"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && !loading && videoInfo?.success && handleDownload()}
-                  placeholder="Paste video URL here..."
-                  className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border-2 border-[#fb923c]/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fb923c] focus:border-[#fb923c] bg-[#1a1a1a] text-[#fb923c] transition-all duration-200 hover:border-[#fb923c]/60"
-                  disabled={loading}
-                />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                  {scanning && (
-                    <div className="spinner-circle" title="Scanning video..."></div>
-                  )}
-                  {videoInfo?.success && !scanning && !loading && (
-                    <span className="animate-fadeIn" style={{ color: '#fb923c', fontSize: '18px' }}>✅</span>
-                  )}
-                  {url && !loading && !scanning && (
+              <div className="flex-1 flex items-center gap-2">
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && !loading && videoInfo?.success && handleDownload()}
+                    placeholder="Paste video URL here..."
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-12 sm:pr-14 text-sm sm:text-base border-2 border-[#fb923c]/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fb923c] focus:border-[#fb923c] bg-[#1a1a1a] text-[#fb923c] transition-all duration-200 hover:border-[#fb923c]/60"
+                    disabled={loading}
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
+                    {scanning && (
+                      <div className="spinner-circle" title="Scanning video..."></div>
+                    )}
+                    {videoInfo?.success && !scanning && !loading && (
+                      <span className="animate-fadeIn" style={{ color: '#fb923c', fontSize: '18px' }}>✅</span>
+                    )}
+                  </div>
+                </div>
+                {url && !loading && !scanning && (
+                  <div className="flex-shrink-0">
                     <button
                       onClick={() => {
                         setUrl("");
@@ -545,14 +549,14 @@ export default function VideoDownloader() {
                         setError(null);
                         setResult(null);
                       }}
-                      className="text-[#fb923c] hover:text-white hover:bg-[#fb923c] transition-all duration-200 text-xl sm:text-lg font-bold w-8 h-8 sm:w-6 sm:h-6 flex items-center justify-center rounded-full bg-[#fb923c]/10 border border-[#fb923c]/30 hover:border-[#fb923c] z-10"
+                      className="text-[#fb923c] hover:text-white hover:bg-[#fb923c] transition-all duration-200 text-xl sm:text-lg font-bold w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg bg-[#fb923c]/20 border-2 border-[#fb923c]/50 hover:border-[#fb923c] shadow-sm hover:shadow-md"
                       title="Clear all"
                       aria-label="Clear URL"
                     >
                       ✕
                     </button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
               <button
                 onClick={() => {
