@@ -18,33 +18,37 @@ export async function getYtDlpCommand(): Promise<string> {
     return ytDlpCommand;
   }
 
-  // Try yt-dlp command first
+  // Try python3 -m yt_dlp first (most reliable since we install via pip)
   try {
-    await execAsync("yt-dlp --version", { timeout: 2000 });
-    ytDlpCommand = "yt-dlp";
-    return ytDlpCommand;
-  } catch {
-    // yt-dlp not found, try python3 -m yt_dlp
-  }
-
-  // Try python3 -m yt_dlp as fallback
-  try {
-    await execAsync("python3 -m yt_dlp --version", { timeout: 2000 });
+    await execAsync("python3 -m yt_dlp --version", { timeout: 5000 });
     ytDlpCommand = "python3 -m yt_dlp";
+    console.log("[getYtDlpCommand] Using python3 -m yt_dlp");
     return ytDlpCommand;
-  } catch {
-    // Neither works - try python -m yt_dlp (without 3)
-    try {
-      await execAsync("python -m yt_dlp --version", { timeout: 2000 });
-      ytDlpCommand = "python -m yt_dlp";
-      return ytDlpCommand;
-    } catch {
-      // All methods failed
-    }
+  } catch (error: any) {
+    console.log("[getYtDlpCommand] python3 -m yt_dlp not available, trying alternatives");
   }
 
-  // If we get here, neither command works
-  // Return python3 -m yt_dlp as default since that's what we install via pip
+  // Try yt-dlp command
+  try {
+    await execAsync("yt-dlp --version", { timeout: 5000 });
+    ytDlpCommand = "yt-dlp";
+    console.log("[getYtDlpCommand] Using yt-dlp command");
+    return ytDlpCommand;
+  } catch (error: any) {
+    console.log("[getYtDlpCommand] yt-dlp command not available, trying python");
+  }
+
+  // Try python -m yt_dlp (without 3)
+  try {
+    await execAsync("python -m yt_dlp --version", { timeout: 5000 });
+    ytDlpCommand = "python -m yt_dlp";
+    console.log("[getYtDlpCommand] Using python -m yt_dlp");
+    return ytDlpCommand;
+  } catch (error: any) {
+    console.log("[getYtDlpCommand] All methods failed, defaulting to python3 -m yt_dlp");
+  }
+
+  // Default to python3 -m yt_dlp since that's what we install via pip
   ytDlpCommand = "python3 -m yt_dlp";
   return ytDlpCommand;
 }

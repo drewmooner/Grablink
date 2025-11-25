@@ -521,15 +521,16 @@ export default function VideoDownloader() {
             </label>
             <div className="flex flex-col sm:flex-row gap-2">
               <div className="flex-1 flex items-center gap-2">
-                <div className="flex-1 relative">
+                <div className="flex-1 relative min-w-0">
                   <input
                     type="text"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && !loading && videoInfo?.success && handleDownload()}
                     placeholder="Paste video URL here..."
-                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-12 sm:pr-14 text-sm sm:text-base border-2 border-[#fb923c]/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fb923c] focus:border-[#fb923c] bg-[#1a1a1a] text-[#fb923c] transition-all duration-200 hover:border-[#fb923c]/60"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-14 sm:pr-14 text-sm sm:text-base border-2 border-[#fb923c]/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fb923c] focus:border-[#fb923c] bg-[#1a1a1a] text-[#fb923c] transition-all duration-200 hover:border-[#fb923c]/60 truncate"
                     disabled={loading}
+                    style={{ textOverflow: 'ellipsis' }}
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
                     {scanning && (
