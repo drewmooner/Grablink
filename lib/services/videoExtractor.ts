@@ -14,7 +14,7 @@ import type {
 } from "@/lib/types";
 import { detectPlatform, isPlatformSupported } from "@/lib/utils/platform";
 import { parseYtDlpError, ExtractionError } from "@/lib/utils/errors";
-import { buildYtDlpCommand, escapePath } from "@/lib/utils/command";
+import { buildYtDlpCommand, escapePath, getYtDlpCommand } from "@/lib/utils/command";
 
 const execAsync = promisify(exec);
 
@@ -96,32 +96,21 @@ export async function getVideoInfo(url: string): Promise<VideoInfoResponse> {
     // Ensure URL doesn't have double slashes in path (except after protocol)
     finalUrl = finalUrl.replace(/([^:]\/)\/+/g, "$1");
 
-    // Check if yt-dlp is available first (try both yt-dlp and python3 -m yt_dlp)
-    let ytDlpAvailable = false;
-    let ytDlpError: any = null;
-    
-    // Try yt-dlp command
+    // Check if yt-dlp is available using the same detection logic
+    // getYtDlpCommand() already does the checking, so we just need to verify it works
     try {
-      await execAsync("yt-dlp --version", { timeout: 5000 });
-      ytDlpAvailable = true;
-      console.log("[getVideoInfo] yt-dlp is available");
+      const detectedCommand = await getYtDlpCommand();
+      // Test the detected command
+      const testCmd = detectedCommand === "yt-dlp" 
+        ? "yt-dlp --version" 
+        : "python3 -m yt_dlp --version";
+      await execAsync(testCmd, { timeout: 5000 });
+      console.log("[getVideoInfo] yt-dlp is available via:", detectedCommand);
     } catch (checkError: any) {
-      ytDlpError = checkError;
-      // Try python3 -m yt_dlp as fallback
-      try {
-        await execAsync("python3 -m yt_dlp --version", { timeout: 5000 });
-        ytDlpAvailable = true;
-        console.log("[getVideoInfo] yt-dlp is available via python3 -m yt_dlp");
-      } catch (pythonError: any) {
-        // Both failed
-        console.error("[getVideoInfo] yt-dlp not found or not accessible:", checkError, pythonError);
-      }
-    }
-    
-    if (!ytDlpAvailable) {
-      const errorMessage = ytDlpError?.code === "ENOENT" 
+      console.error("[getVideoInfo] yt-dlp not found or not accessible:", checkError);
+      const errorMessage = checkError.code === "ENOENT" 
         ? "yt-dlp is not installed or not in PATH. Please install yt-dlp: pip install yt-dlp"
-        : `yt-dlp check failed: ${ytDlpError?.message || "yt-dlp not found"}`;
+        : `yt-dlp check failed: ${checkError.message}`;
       
       return {
         success: false,
