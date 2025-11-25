@@ -2,6 +2,44 @@
 
 import * as path from "path";
 import * as os from "os";
+import { exec } from "child_process";
+import { promisify } from "util";
+
+const execAsync = promisify(exec);
+
+// Cache for yt-dlp command path
+let ytDlpCommand: string | null = null;
+
+/**
+ * Get the yt-dlp command to use (tries yt-dlp first, then python3 -m yt_dlp)
+ */
+export async function getYtDlpCommand(): Promise<string> {
+  if (ytDlpCommand) {
+    return ytDlpCommand;
+  }
+
+  // Try yt-dlp command first
+  try {
+    await execAsync("yt-dlp --version", { timeout: 2000 });
+    ytDlpCommand = "yt-dlp";
+    return ytDlpCommand;
+  } catch {
+    // yt-dlp not found, try python3 -m yt_dlp
+  }
+
+  // Try python3 -m yt_dlp as fallback
+  try {
+    await execAsync("python3 -m yt_dlp --version", { timeout: 2000 });
+    ytDlpCommand = "python3 -m yt_dlp";
+    return ytDlpCommand;
+  } catch {
+    // Neither works
+  }
+
+  // Default to yt-dlp (will fail with clear error)
+  ytDlpCommand = "yt-dlp";
+  return ytDlpCommand;
+}
 
 /**
  * Escape URL for use in shell command
@@ -42,7 +80,7 @@ export function escapePath(filePath: string): string {
 /**
  * Build yt-dlp command with proper escaping
  */
-export function buildYtDlpCommand(
+export async function buildYtDlpCommand(
   url: string,
   options: {
     format?: string;
@@ -52,8 +90,9 @@ export function buildYtDlpCommand(
     maxHeight?: number; // Maximum video height (e.g., 720 for 720p)
     compress?: boolean; // Whether to compress video
   } = {}
-): string {
-  const parts: string[] = ["yt-dlp"];
+): Promise<string> {
+  const ytDlp = await getYtDlpCommand();
+  const parts: string[] = ytDlp.split(" ");
 
   // Gracefully skip TikTok URLs - they should be caught earlier, but just in case
   const urlLower = url.toLowerCase();

@@ -10,7 +10,9 @@ RUN apt-get update && apt-get install -y \
 
 # Install yt-dlp (using --break-system-packages is safe in Docker containers)
 RUN pip3 install --upgrade pip --break-system-packages && \
-    pip3 install yt-dlp --break-system-packages
+    pip3 install yt-dlp --break-system-packages && \
+    yt-dlp --version && \
+    which yt-dlp
 
 # Set working directory
 WORKDIR /app

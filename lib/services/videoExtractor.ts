@@ -96,15 +96,32 @@ export async function getVideoInfo(url: string): Promise<VideoInfoResponse> {
     // Ensure URL doesn't have double slashes in path (except after protocol)
     finalUrl = finalUrl.replace(/([^:]\/)\/+/g, "$1");
 
-    // Check if yt-dlp is available first
+    // Check if yt-dlp is available first (try both yt-dlp and python3 -m yt_dlp)
+    let ytDlpAvailable = false;
+    let ytDlpError: any = null;
+    
+    // Try yt-dlp command
     try {
       await execAsync("yt-dlp --version", { timeout: 5000 });
+      ytDlpAvailable = true;
       console.log("[getVideoInfo] yt-dlp is available");
     } catch (checkError: any) {
-      console.error("[getVideoInfo] yt-dlp not found or not accessible:", checkError);
-      const errorMessage = checkError.code === "ENOENT" 
+      ytDlpError = checkError;
+      // Try python3 -m yt_dlp as fallback
+      try {
+        await execAsync("python3 -m yt_dlp --version", { timeout: 5000 });
+        ytDlpAvailable = true;
+        console.log("[getVideoInfo] yt-dlp is available via python3 -m yt_dlp");
+      } catch (pythonError: any) {
+        // Both failed
+        console.error("[getVideoInfo] yt-dlp not found or not accessible:", checkError, pythonError);
+      }
+    }
+    
+    if (!ytDlpAvailable) {
+      const errorMessage = ytDlpError?.code === "ENOENT" 
         ? "yt-dlp is not installed or not in PATH. Please install yt-dlp: pip install yt-dlp"
-        : `yt-dlp check failed: ${checkError.message}`;
+        : `yt-dlp check failed: ${ytDlpError?.message || "yt-dlp not found"}`;
       
       return {
         success: false,
@@ -124,7 +141,7 @@ export async function getVideoInfo(url: string): Promise<VideoInfoResponse> {
     }
 
     // Use yt-dlp to get video info (JSON format) with proper URL escaping
-    const command = buildYtDlpCommand(finalUrl, {
+    const command = await buildYtDlpCommand(finalUrl, {
       json: true,
       noDownload: true,
     });
@@ -519,7 +536,7 @@ export async function downloadVideo(
   // Limit to 720p max to reduce file size while maintaining good quality
   // This significantly reduces file sizes (720p is ~50% smaller than 1080p)
   // Format includes /best fallback if 720p isn't available
-  const command = buildYtDlpCommand(finalDownloadUrl, {
+  const command = await buildYtDlpCommand(finalDownloadUrl, {
     maxHeight: 720, // Limit to 720p for smaller file sizes, with fallback to best
     output: outputFile,
   });
@@ -558,7 +575,7 @@ export async function downloadVideo(
     if (errorLower.includes("format") || errorLower.includes("quality") || errorLower.includes("requested format")) {
       console.log("[downloadVideo] Format error detected, retrying with best quality fallback");
       // Retry with best quality (no height restriction)
-      const fallbackCommand = buildYtDlpCommand(url, {
+      const fallbackCommand = await buildYtDlpCommand(url, {
         format: "best", // Use best available quality without height restriction
         output: outputFile,
       });
@@ -739,7 +756,7 @@ export async function downloadVideo(
   // Get metadata with proper URL escaping
   let metadata: any;
   try {
-    const metadataCommand = buildYtDlpCommand(url, {
+    const metadataCommand = await buildYtDlpCommand(url, {
       json: true,
       noDownload: true,
     });

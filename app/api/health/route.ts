@@ -24,15 +24,21 @@ export async function GET() {
     }
   }
 
-  // Check yt-dlp
+  // Check yt-dlp (try both yt-dlp command and python3 -m yt_dlp)
   try {
     const { stdout } = await execAsync("yt-dlp --version", { timeout: 5000 });
     checks.ytdlp = { available: true, version: stdout.trim() };
   } catch (error: any) {
-    checks.ytdlp = { 
-      available: false, 
-      error: error.code === "ENOENT" ? "yt-dlp not found in PATH. Install with: pip install yt-dlp" : error.message 
-    };
+    // Try python3 -m yt_dlp as fallback
+    try {
+      const { stdout } = await execAsync("python3 -m yt_dlp --version", { timeout: 5000 });
+      checks.ytdlp = { available: true, version: stdout.trim() };
+    } catch (pythonError: any) {
+      checks.ytdlp = { 
+        available: false, 
+        error: error.code === "ENOENT" ? "yt-dlp not found in PATH. Install with: pip install yt-dlp" : error.message 
+      };
+    }
   }
 
   // Check FFmpeg
