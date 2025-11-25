@@ -545,8 +545,9 @@ export default function VideoDownloader() {
                         setError(null);
                         setResult(null);
                       }}
-                      className="text-[#fb923c]/60 hover:text-[#fb923c] transition-colors text-lg font-bold"
+                      className="text-[#fb923c] hover:text-white hover:bg-[#fb923c] transition-all duration-200 text-xl sm:text-lg font-bold w-8 h-8 sm:w-6 sm:h-6 flex items-center justify-center rounded-full bg-[#fb923c]/10 border border-[#fb923c]/30 hover:border-[#fb923c] z-10"
                       title="Clear all"
+                      aria-label="Clear URL"
                     >
                       ✕
                     </button>
