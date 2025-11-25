@@ -1,0 +1,1027 @@
+@import "tailwindcss";
+
+:root {
+  --background: #1a1a1a;
+  --foreground: #ededed;
+  --gradient-start: #fb923c;
+  --gradient-end: #1a1a1a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #1a1a1a;
+    --foreground: #ededed;
+    --gradient-start: #fb923c;
+    --gradient-end: #1a1a1a;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Professional Circular Spinner */
+.spinner-circle {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(251, 146, 60, 0.2);
+  border-top-color: #fb923c;
+  border-right-color: rgba(251, 146, 60, 0.5);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.spinner-circle-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Custom breakpoint for extra small screens (475px+) */
+@media (min-width: 475px) {
+  .xs\:block {
+    display: block;
+  }
+  .xs\:text-5xl {
+    font-size: 3rem;
+    line-height: 1;
+  }
+  .xs\:text-base {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+}
+
+/* Smooth animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out;
+}
+
+.animate-pulse-slow {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #1a1a1a, #1a1a1a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-header {
+  background: linear-gradient(135deg, #fb923c, #fb923c 30%, #1a1a1a 70%, #1a1a1a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 0 20px rgba(251, 146, 60, 0.5));
+}
+
+/* Gradient background */
+.gradient-bg {
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+}
+
+/* Hover effects */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Smooth transitions */
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Custom scrollbar to prevent shaking */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgb(212 212 212);
+  border-radius: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(161 161 161);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: rgb(82 82 82);
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(115 115 115);
+}
+
+/* Animated Background */
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+}
+
+@keyframes floatReverse {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-30px, 30px) scale(1.1);
+  }
+  66% {
+    transform: translate(20px, -20px) scale(0.9);
+  }
+}
+
+/* Amber Orange Stripes - Coming from Top-Left Corner */
+@keyframes stripeMoveFromTopLeft {
+  0% {
+    transform: translate(-50%, -50%) rotate(45deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(100vw + 50%), calc(100vh + 50%)) rotate(45deg);
+    opacity: 0;
+  }
+}
+
+/* White Stripes - Coming from Top-Right Corner */
+@keyframes stripeMoveFromTopRight {
+  0% {
+    transform: translate(calc(100vw + 50%), -50%) rotate(-45deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, calc(100vh + 50%)) rotate(-45deg);
+    opacity: 0;
+  }
+}
+
+/* Amber Orange Stripes - Coming from Bottom-Left Corner */
+@keyframes stripeMoveFromBottomLeft {
+  0% {
+    transform: translate(-50%, calc(100vh + 50%)) rotate(-45deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(100vw + 50%), -50%) rotate(-45deg);
+    opacity: 0;
+  }
+}
+
+/* White Stripes - Coming from Bottom-Right Corner */
+@keyframes stripeMoveFromBottomRight {
+  0% {
+    transform: translate(calc(100vw + 50%), calc(100vh + 50%)) rotate(45deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(45deg);
+    opacity: 0;
+  }
+}
+
+/* Horizontal Converging Patterns */
+@keyframes stripeMoveHorizontalCenter {
+  0% {
+    transform: translateX(-100%) rotate(0deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(calc(50vw - 50%)) rotate(0deg);
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(calc(100vw + 100%)) rotate(0deg);
+    opacity: 0;
+  }
+}
+
+@keyframes stripeMoveHorizontalCenterReverse {
+  0% {
+    transform: translateX(calc(100vw + 100%)) rotate(0deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(calc(50vw - 50%)) rotate(0deg);
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-100%) rotate(0deg);
+    opacity: 0;
+  }
+}
+
+/* Vertical Converging Patterns */
+@keyframes stripeMoveVerticalCenter {
+  0% {
+    transform: translateY(-100%) rotate(90deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(calc(50vh - 50%)) rotate(90deg);
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(calc(100vh + 100%)) rotate(90deg);
+    opacity: 0;
+  }
+}
+
+@keyframes stripeMoveVerticalCenterReverse {
+  0% {
+    transform: translateY(calc(100vh + 100%)) rotate(90deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(calc(50vh - 50%)) rotate(90deg);
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100%) rotate(90deg);
+    opacity: 0;
+  }
+}
+
+/* Radial Expanding Patterns */
+@keyframes stripeMoveRadialOut {
+  0% {
+    transform: translate(50vw, 50vh) scale(0) rotate(45deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(50vw, 50vh) scale(4) rotate(45deg);
+    opacity: 0;
+  }
+}
+
+@keyframes stripeMoveRadialIn {
+  0% {
+    transform: translate(50vw, 50vh) scale(4) rotate(45deg);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(50vw, 50vh) scale(0) rotate(45deg);
+    opacity: 0;
+  }
+}
+
+@keyframes meshPattern {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translate(50px, 50px) scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.6;
+  }
+}
+
+.animated-background {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animated Amber Orange Stripes - Professional Mesh Pattern */
+.animated-background .stripe {
+  position: absolute;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(251, 146, 60, 0.4) 15%, 
+    rgba(251, 146, 60, 0.6) 30%, 
+    rgba(251, 146, 60, 0.7) 50%, 
+    rgba(251, 146, 60, 0.6) 70%, 
+    rgba(251, 146, 60, 0.4) 85%, 
+    transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+  mix-blend-mode: screen;
+  filter: blur(0.5px);
+}
+
+/* Animated White Stripes - Professional Mesh Pattern */
+.animated-background .stripe-white {
+  position: absolute;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.3) 15%, 
+    rgba(255, 255, 255, 0.5) 30%, 
+    rgba(255, 255, 255, 0.6) 50%, 
+    rgba(255, 255, 255, 0.5) 70%, 
+    rgba(255, 255, 255, 0.3) 85%, 
+    transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+  mix-blend-mode: screen;
+  filter: blur(0.5px);
+}
+
+/* Professional Mesh Pattern Overlay */
+.animated-background .mesh-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(rgba(251, 146, 60, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(251, 146, 60, 0.1) 1px, transparent 1px),
+    linear-gradient(45deg, rgba(251, 146, 60, 0.05) 1px, transparent 1px),
+    linear-gradient(-45deg, rgba(251, 146, 60, 0.05) 1px, transparent 1px);
+  background-size: 
+    100px 100px,
+    100px 100px,
+    141px 141px,
+    141px 141px;
+  pointer-events: none;
+  z-index: 1;
+  animation: meshPattern 20s ease-in-out infinite;
+  mix-blend-mode: screen;
+}
+
+/* Amber Orange Stripes - Coming from Top-Left Corner, converging to center */
+.stripe-1 {
+  width: 200%;
+  height: 3px;
+  top: 0;
+  left: 0;
+  animation: stripeMoveFromTopLeft 20s linear infinite;
+}
+
+.stripe-2 {
+  width: 200%;
+  height: 3px;
+  top: 0;
+  left: 0;
+  animation: stripeMoveFromTopLeft 22s linear infinite;
+  animation-delay: 2s;
+}
+
+.stripe-3 {
+  width: 200%;
+  height: 3px;
+  top: 0;
+  left: 0;
+  animation: stripeMoveFromTopLeft 24s linear infinite;
+  animation-delay: 4s;
+}
+
+.stripe-4 {
+  width: 200%;
+  height: 3px;
+  top: 0;
+  left: 0;
+  animation: stripeMoveFromTopLeft 18s linear infinite;
+  animation-delay: 1s;
+}
+
+.stripe-5 {
+  width: 200%;
+  height: 3px;
+  top: 0;
+  left: 0;
+  animation: stripeMoveFromTopLeft 26s linear infinite;
+  animation-delay: 5s;
+}
+
+/* Amber Orange Stripes - Coming from Bottom-Left Corner */
+.stripe-6 {
+  width: 200%;
+  height: 3px;
+  top: 0;
+  left: 0;
+  animation: stripeMoveFromBottomLeft 21s linear infinite;
+  animation-delay: 0.5s;
+}
+
+.stripe-7 {
+  width: 200%;
+  height: 3px;
+  top: 0;
+  left: 0;
+  animation: stripeMoveFromBottomLeft 23s linear infinite;
+  animation-delay: 3s;
+}
+
+.stripe-8 {
+  width: 200%;
+  height: 3px;
+  top: 0;
+  left: 0;
+  animation: stripeMoveFromBottomLeft 19s linear infinite;
+  animation-delay: 1.5s;
+}
+
+.stripe-9 {
+  width: 200%;
+  height: 3px;
+  top: 0;
+  left: 0;
+  animation: stripeMoveFromBottomLeft 25s linear infinite;
+  animation-delay: 4.5s;
+}
+
+.stripe-10 {
+  width: 200%;
+  height: 3px;
+  top: 0;
+  left: 0;
+  animation: stripeMoveFromBottomLeft 17s linear infinite;
+  animation-delay: 0.2s;
+}
+
+/* Amber Orange - Horizontal converging to center */
+.stripe-11 {
+  width: 100%;
+  height: 2px;
+  top: 20%;
+  left: 0;
+  animation: stripeMoveHorizontalCenter 15s linear infinite;
+}
+
+.stripe-12 {
+  width: 100%;
+  height: 2px;
+  top: 40%;
+  left: 0;
+  animation: stripeMoveHorizontalCenterReverse 16s linear infinite;
+  animation-delay: 1s;
+}
+
+.stripe-13 {
+  width: 100%;
+  height: 2px;
+  top: 60%;
+  left: 0;
+  animation: stripeMoveHorizontalCenter 17s linear infinite;
+  animation-delay: 2s;
+}
+
+.stripe-14 {
+  width: 100%;
+  height: 2px;
+  top: 80%;
+  left: 0;
+  animation: stripeMoveHorizontalCenterReverse 18s linear infinite;
+  animation-delay: 3s;
+}
+
+/* Amber Orange - Vertical converging to center */
+.stripe-15 {
+  width: 2px;
+  height: 100%;
+  left: 20%;
+  top: 0;
+  animation: stripeMoveVerticalCenter 14s linear infinite;
+}
+
+.stripe-16 {
+  width: 2px;
+  height: 100%;
+  left: 40%;
+  top: 0;
+  animation: stripeMoveVerticalCenterReverse 15s linear infinite;
+  animation-delay: 1.5s;
+}
+
+.stripe-17 {
+  width: 2px;
+  height: 100%;
+  left: 60%;
+  top: 0;
+  animation: stripeMoveVerticalCenter 16s linear infinite;
+  animation-delay: 3s;
+}
+
+.stripe-18 {
+  width: 2px;
+  height: 100%;
+  left: 80%;
+  top: 0;
+  animation: stripeMoveVerticalCenterReverse 17s linear infinite;
+  animation-delay: 4.5s;
+}
+
+/* Amber Orange - Radial expanding from center */
+.stripe-19 {
+  width: 200%;
+  height: 3px;
+  top: 50%;
+  left: 50%;
+  animation: stripeMoveRadialOut 20s linear infinite;
+  transform-origin: center;
+}
+
+.stripe-20 {
+  width: 200%;
+  height: 3px;
+  top: 50%;
+  left: 50%;
+  animation: stripeMoveRadialOut 22s linear infinite;
+  animation-delay: 2s;
+  transform-origin: center;
+}
+
+.stripe-21 {
+  width: 200%;
+  height: 3px;
+  top: 50%;
+  left: 50%;
+  animation: stripeMoveRadialIn 18s linear infinite;
+  animation-delay: 1s;
+  transform-origin: center;
+}
+
+.stripe-22 {
+  width: 200%;
+  height: 3px;
+  top: 50%;
+  left: 50%;
+  animation: stripeMoveRadialIn 24s linear infinite;
+  animation-delay: 3s;
+  transform-origin: center;
+}
+
+.stripe-23 {
+  width: 200%;
+  height: 3px;
+  top: 50%;
+  left: 50%;
+  animation: stripeMoveRadialOut 19s linear infinite;
+  animation-delay: 0.5s;
+  transform-origin: center;
+}
+
+.stripe-24 {
+  width: 200%;
+  height: 3px;
+  top: 50%;
+  left: 50%;
+  animation: stripeMoveRadialIn 21s linear infinite;
+  animation-delay: 4s;
+  transform-origin: center;
+}
+
+.stripe-25 {
+  width: 200%;
+  height: 3px;
+  top: 50%;
+  left: 50%;
+  animation: stripeMoveRadialOut 23s linear infinite;
+  animation-delay: 5s;
+  transform-origin: center;
+}
+
+/* White Stripes - Coming from Top-Right Corner, converging to center */
+.stripe-white-1 {
+  width: 200%;
+  height: 3px;
+  top: 0;
+  left: 0;
+  animation: stripeMoveFromTopRight 20s linear infinite;
+}
+
+.stripe-white-2 {
+  width: 200%;
+  height: 3px;
+  top: 0;
+  left: 0;
+  animation: stripeMoveFromTopRight 22s linear infinite;
+  animation-delay: 2s;
+}
+
+.stripe-white-3 {
+  width: 200%;
+  height: 3px;
+  top: 0;
+  left: 0;
+  animation: stripeMoveFromTopRight 24s linear infinite;
+  animation-delay: 4s;
+}
+
+.stripe-white-4 {
+  width: 200%;
+  height: 3px;
+  top: 0;
+  left: 0;
+  animation: stripeMoveFromTopRight 18s linear infinite;
+  animation-delay: 1s;
+}
+
+.stripe-white-5 {
+  width: 200%;
+  height: 3px;
+  top: 0;
+  left: 0;
+  animation: stripeMoveFromTopRight 26s linear infinite;
+  animation-delay: 5s;
+}
+
+/* White Stripes - Coming from Bottom-Right Corner */
+.stripe-white-6 {
+  width: 200%;
+  height: 3px;
+  top: 0;
+  left: 0;
+  animation: stripeMoveFromBottomRight 21s linear infinite;
+  animation-delay: 0.5s;
+}
+
+.stripe-white-7 {
+  width: 200%;
+  height: 3px;
+  top: 0;
+  left: 0;
+  animation: stripeMoveFromBottomRight 23s linear infinite;
+  animation-delay: 3s;
+}
+
+.stripe-white-8 {
+  width: 200%;
+  height: 3px;
+  top: 0;
+  left: 0;
+  animation: stripeMoveFromBottomRight 19s linear infinite;
+  animation-delay: 1.5s;
+}
+
+.stripe-white-9 {
+  width: 200%;
+  height: 3px;
+  top: 0;
+  left: 0;
+  animation: stripeMoveFromBottomRight 25s linear infinite;
+  animation-delay: 4.5s;
+}
+
+.stripe-white-10 {
+  width: 200%;
+  height: 3px;
+  top: 0;
+  left: 0;
+  animation: stripeMoveFromBottomRight 17s linear infinite;
+  animation-delay: 0.2s;
+}
+
+/* White - Horizontal converging to center */
+.stripe-white-11 {
+  width: 100%;
+  height: 2px;
+  top: 30%;
+  left: 0;
+  animation: stripeMoveHorizontalCenter 15s linear infinite;
+  animation-delay: 0.5s;
+}
+
+.stripe-white-12 {
+  width: 100%;
+  height: 2px;
+  top: 50%;
+  left: 0;
+  animation: stripeMoveHorizontalCenterReverse 16s linear infinite;
+  animation-delay: 1.5s;
+}
+
+.stripe-white-13 {
+  width: 100%;
+  height: 2px;
+  top: 70%;
+  left: 0;
+  animation: stripeMoveHorizontalCenter 17s linear infinite;
+  animation-delay: 2.5s;
+}
+
+.stripe-white-14 {
+  width: 100%;
+  height: 2px;
+  top: 10%;
+  left: 0;
+  animation: stripeMoveHorizontalCenterReverse 18s linear infinite;
+  animation-delay: 3.5s;
+}
+
+/* White - Vertical converging to center */
+.stripe-white-15 {
+  width: 2px;
+  height: 100%;
+  left: 30%;
+  top: 0;
+  animation: stripeMoveVerticalCenter 14s linear infinite;
+  animation-delay: 0.5s;
+}
+
+.stripe-white-16 {
+  width: 2px;
+  height: 100%;
+  left: 50%;
+  top: 0;
+  animation: stripeMoveVerticalCenterReverse 15s linear infinite;
+  animation-delay: 2s;
+}
+
+.stripe-white-17 {
+  width: 2px;
+  height: 100%;
+  left: 70%;
+  top: 0;
+  animation: stripeMoveVerticalCenter 16s linear infinite;
+  animation-delay: 3.5s;
+}
+
+.stripe-white-18 {
+  width: 2px;
+  height: 100%;
+  left: 10%;
+  top: 0;
+  animation: stripeMoveVerticalCenterReverse 17s linear infinite;
+  animation-delay: 5s;
+}
+
+/* White - Radial expanding from center */
+.stripe-white-19 {
+  width: 200%;
+  height: 3px;
+  top: 50%;
+  left: 50%;
+  animation: stripeMoveRadialOut 20s linear infinite;
+  animation-delay: 1s;
+  transform-origin: center;
+}
+
+.stripe-white-20 {
+  width: 200%;
+  height: 3px;
+  top: 50%;
+  left: 50%;
+  animation: stripeMoveRadialOut 22s linear infinite;
+  animation-delay: 3s;
+  transform-origin: center;
+}
+
+.stripe-white-21 {
+  width: 200%;
+  height: 3px;
+  top: 50%;
+  left: 50%;
+  animation: stripeMoveRadialIn 18s linear infinite;
+  animation-delay: 2s;
+  transform-origin: center;
+}
+
+.stripe-white-22 {
+  width: 200%;
+  height: 3px;
+  top: 50%;
+  left: 50%;
+  animation: stripeMoveRadialIn 24s linear infinite;
+  animation-delay: 4s;
+  transform-origin: center;
+}
+
+.stripe-white-23 {
+  width: 200%;
+  height: 3px;
+  top: 50%;
+  left: 50%;
+  animation: stripeMoveRadialOut 19s linear infinite;
+  animation-delay: 1.5s;
+  transform-origin: center;
+}
+
+.stripe-white-24 {
+  width: 200%;
+  height: 3px;
+  top: 50%;
+  left: 50%;
+  animation: stripeMoveRadialIn 21s linear infinite;
+  animation-delay: 4.5s;
+  transform-origin: center;
+}
+
+.stripe-white-25 {
+  width: 200%;
+  height: 3px;
+  top: 50%;
+  left: 50%;
+  animation: stripeMoveRadialOut 23s linear infinite;
+  animation-delay: 5.5s;
+  transform-origin: center;
+}
+
+.animated-background::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(26, 26, 26, 0.5) 0%, transparent 60%),
+    radial-gradient(circle at 80% 80%, rgba(26, 26, 26, 0.4) 0%, transparent 60%),
+    radial-gradient(circle at 40% 20%, rgba(26, 26, 26, 0.5) 0%, transparent 60%);
+  animation: float 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.animated-background::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: 
+    radial-gradient(circle at 60% 30%, rgba(26, 26, 26, 0.5) 0%, transparent 60%),
+    radial-gradient(circle at 10% 70%, rgba(26, 26, 26, 0.6) 0%, transparent 60%),
+    radial-gradient(circle at 90% 10%, rgba(26, 26, 26, 0.4) 0%, transparent 60%);
+  animation: floatReverse 25s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Floating orbs */
+.floating-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.floating-orb-1 {
+  width: 400px;
+  height: 400px;
+  background: linear-gradient(135deg, rgba(26, 26, 26, 0.6), rgba(26, 26, 26, 0.8));
+  top: 10%;
+  left: 10%;
+  animation: float 15s ease-in-out infinite;
+}
+
+.floating-orb-2 {
+  width: 350px;
+  height: 350px;
+  background: linear-gradient(135deg, rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.9));
+  top: 60%;
+  right: 15%;
+  animation: floatReverse 18s ease-in-out infinite;
+}
+
+.floating-orb-3 {
+  width: 300px;
+  height: 300px;
+  background: linear-gradient(135deg, rgba(26, 26, 26, 0.5), rgba(26, 26, 26, 0.7));
+  bottom: 20%;
+  left: 50%;
+  animation: float 22s ease-in-out infinite;
+}
