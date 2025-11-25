@@ -8,9 +8,9 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-# Install yt-dlp
-RUN pip3 install --upgrade pip && \
-    pip3 install yt-dlp
+# Install yt-dlp (using --break-system-packages is safe in Docker containers)
+RUN pip3 install --upgrade pip --break-system-packages && \
+    pip3 install yt-dlp --break-system-packages
 
 # Set working directory
 WORKDIR /app
