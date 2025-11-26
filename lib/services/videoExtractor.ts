@@ -501,12 +501,11 @@ export async function downloadVideo(
   finalDownloadUrl = finalDownloadUrl.replace(/\/+$/, "");
   finalDownloadUrl = finalDownloadUrl.replace(/([^:]\/)\/+/g, "$1");
 
-  // Download video with size optimization
-  // Limit to 720p max to reduce file size while maintaining good quality
-  // This significantly reduces file sizes (720p is ~50% smaller than 1080p)
-  // Format includes /best fallback if 720p isn't available
+  // Download video in best available quality
+  // Removed 720p limit to ensure all videos download regardless of size
+  // Format includes /best fallback for maximum compatibility
   const command = await buildYtDlpCommand(finalDownloadUrl, {
-    maxHeight: 720, // Limit to 720p for smaller file sizes, with fallback to best
+    format: "best", // Use best available quality (no height restriction) to ensure all videos download
     output: outputFile,
   });
   
@@ -543,9 +542,9 @@ export async function downloadVideo(
     
     if (errorLower.includes("format") || errorLower.includes("quality") || errorLower.includes("requested format")) {
       console.log("[downloadVideo] Format error detected, retrying with best quality fallback");
-      // Retry with best quality (no height restriction)
+      // Retry with best quality (no restrictions) - this should work for all videos
       const fallbackCommand = await buildYtDlpCommand(url, {
-        format: "best", // Use best available quality without height restriction
+        format: "bestvideo+bestaudio/best", // Try best video+audio combo, fallback to best single file
         output: outputFile,
       });
       
