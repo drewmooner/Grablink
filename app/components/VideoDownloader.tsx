@@ -358,17 +358,64 @@ export default function VideoDownloader() {
   };
 
   const getPlatformIcon = (platform: string) => {
-    const icons: Record<string, string> = {
-      instagram: "📷",
-      youtube: "▶️",
-      twitter: "🐦",
-      facebook: "👥",
-      pinterest: "📌",
-      vimeo: "🎬",
-      twitch: "🎮",
-      reddit: "🤖",
-    };
-    return icons[platform.toLowerCase()] || "🔗";
+    const platformLower = platform.toLowerCase();
+    const iconClass = "w-5 h-5 sm:w-6 sm:h-6 text-[#fb923c]";
+    
+    if (platformLower === "instagram") {
+      return (
+        <svg className={iconClass} fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+        </svg>
+      );
+    } else if (platformLower === "youtube") {
+      return (
+        <svg className={iconClass} fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+        </svg>
+      );
+    } else if (platformLower === "twitter") {
+      return (
+        <svg className={iconClass} fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+        </svg>
+      );
+    } else if (platformLower === "facebook") {
+      return (
+        <svg className={iconClass} fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+        </svg>
+      );
+    } else if (platformLower === "pinterest") {
+      return (
+        <svg className={iconClass} fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 0C5.373 0 0 5.372 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.403.041-3.441.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.168-2.911 1.024 0 1.518.769 1.518 1.688 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.099.12.112.225.085.345-.09.375-.293 1.199-.334 1.363-.053.225-.172.271-.402.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.357-.629-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24.009 12 24c6.624 0 12-5.373 12-12S18.624.001 12 .001z"/>
+        </svg>
+      );
+    } else if (platformLower === "vimeo") {
+      return (
+        <svg className={iconClass} fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M23.977 6.416c-.105 2.338-1.739 5.543-4.894 9.609-3.268 4.247-6.026 6.37-8.29 6.37-1.409 0-2.578-1.294-3.553-3.881L5.322 11.4C4.603 8.816 3.834 7.522 3.011 7.522c-.179 0-.806.378-1.881 1.132L0 7.197c1.185-1.044 2.351-2.084 3.501-3.128C5.08 2.701 6.266 1.984 7.055 1.91c1.867-.18 3.016 1.1 3.447 3.838.465 2.953.789 4.789.971 5.507.539 2.45 1.131 3.674 1.776 3.674.502 0 1.256-.796 2.265-2.385 1.004-1.589 1.54-2.797 1.612-3.628.144-1.371-.395-2.061-1.614-2.061-.574 0-1.167.121-1.777.391 1.186-3.868 3.434-5.757 6.762-5.637 2.473.06 3.628 1.664 3.493 4.797l-.013.01z"/>
+        </svg>
+      );
+    } else if (platformLower === "twitch") {
+      return (
+        <svg className={iconClass} fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/>
+        </svg>
+      );
+    } else if (platformLower === "reddit") {
+      return (
+        <svg className={iconClass} fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.968 0 1.754.786 1.754 1.754 0 .716-.435 1.333-1.01 1.614a3.111 3.111 0 0 1 .042.52c0 2.694-3.13 4.87-7.004 4.87-3.874 0-7.004-2.176-7.004-4.87 0-.183.015-.366.043-.534A1.748 1.748 0 0 1 4.028 12c0-.968.786-1.754 1.754-1.754.463 0 .898.196 1.207.49 1.207-.883 2.878-1.43 4.744-1.487l.885-4.182a.342.342 0 0 1 .14-.197.35.35 0 0 1 .238-.042l2.906.617a1.214 1.214 0 0 1 1.108-.701zM9.25 12C8.561 12 8 12.562 8 13.25c0 .687.561 1.248 1.25 1.248.687 0 1.248-.561 1.248-1.249 0-.688-.561-1.249-1.249-1.249zm5.5 0c-.687 0-1.248.561-1.248 1.25 0 .687.561 1.248 1.249 1.248.688 0 1.249-.561 1.249-1.249 0-.687-.562-1.249-1.25-1.249zm-5.466 3.99a.327.327 0 0 0-.231.094.33.33 0 0 0 0 .463c.842.842 2.484.913 2.961.913.477 0 2.105-.056 2.961-.913a.361.361 0 0 0 .029-.463.33.33 0 0 0-.464 0c-.547.533-1.684.73-2.512.73-.828 0-1.979-.196-2.512-.73a.326.326 0 0 0-.232-.095z"/>
+        </svg>
+      );
+    } else {
+      return (
+        <svg className={iconClass} fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/>
+        </svg>
+      );
+    }
   };
 
   // Format file size to human-readable format
@@ -517,11 +564,11 @@ export default function VideoDownloader() {
         </div>
 
         {/* Main Download Card */}
-        <div className="bg-[#1a1a1a]/90 backdrop-blur-sm rounded-lg sm:rounded-xl md:rounded-2xl shadow-xl p-3 sm:p-4 md:p-6 mb-3 sm:mb-4 md:mb-6 border border-[#1a1a1a] hover:border-[#fb923c] hover:shadow-[0_0_20px_rgba(251,146,60,0.5),0_0_40px_rgba(251,146,60,0.3)] hover:shadow-[#fb923c] transition-all duration-300 animate-fadeIn relative group" style={{ animationDelay: '0.2s' }}>
+        <div className="bg-[#1a1a1a]/90 backdrop-blur-sm rounded-lg sm:rounded-xl md:rounded-2xl shadow-xl p-3 sm:p-4 md:p-6 mb-3 sm:mb-4 md:mb-6 border border-[#1a1a1a] hover:border-[#fb923c] hover:shadow-[0_0_10px_rgba(251,146,60,0.3)] transition-all duration-300 animate-fadeIn relative group" style={{ animationDelay: '0.2s' }}>
           {/* Amber Orange Glow on Hover - Left Side */}
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#fb923c] opacity-0 group-hover:opacity-100 transition-opacity duration-300 group-hover:shadow-[0_0_20px_rgba(251,146,60,0.8)] rounded-l-xl"></div>
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#fb923c] opacity-0 group-hover:opacity-100 transition-opacity duration-300 group-hover:shadow-[0_0_8px_rgba(251,146,60,0.4)] rounded-l-xl"></div>
           {/* Amber Orange Glow on Hover - Right Side */}
-          <div className="absolute right-0 top-0 bottom-0 w-1 bg-[#fb923c] opacity-0 group-hover:opacity-100 transition-opacity duration-300 group-hover:shadow-[0_0_20px_rgba(251,146,60,0.8)] rounded-r-xl"></div>
+          <div className="absolute right-0 top-0 bottom-0 w-1 bg-[#fb923c] opacity-0 group-hover:opacity-100 transition-opacity duration-300 group-hover:shadow-[0_0_8px_rgba(251,146,60,0.4)] rounded-r-xl"></div>
           {/* URL Input */}
           <div className="mb-4 sm:mb-6">
             <label className="block text-sm sm:text-base font-medium text-[#fb923c] mb-2">
@@ -545,7 +592,9 @@ export default function VideoDownloader() {
                       <div className="spinner-circle" title="Scanning video..."></div>
                     )}
                     {videoInfo?.success && !scanning && !loading && (
-                      <span className="animate-fadeIn" style={{ color: '#fb923c', fontSize: '18px' }}>✅</span>
+                      <svg className="w-5 h-5 text-[#fb923c] animate-fadeIn" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
                     )}
                   </div>
                 </div>
@@ -680,12 +729,16 @@ export default function VideoDownloader() {
               </>
             ) : !videoInfo?.success ? (
               <>
-                <span>⏸️</span>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 Waiting for video scan...
               </>
             ) : (
               <>
-                <span>⬇️</span>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
                 Download {audioOnly ? "Audio" : "Video"}
                 {(() => {
                   const estimatedSize = getEstimatedSize();
@@ -707,7 +760,12 @@ export default function VideoDownloader() {
           {error && (
             <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gradient-to-r from-[#fb923c]/20 to-[#1a1a1a] border-2 border-[#fb923c]/40 rounded-lg sm:rounded-xl">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <p className="text-[#fb923c] text-xs sm:text-sm md:text-base font-semibold flex-1 break-words">❌ {error}</p>
+                <p className="text-[#fb923c] text-xs sm:text-sm md:text-base font-semibold flex-1 break-words flex items-center gap-2">
+                  <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  {error}
+                </p>
                 {url.trim() && isValidUrl(url.trim()) && (
                   <button
                     onClick={async () => {
@@ -746,7 +804,9 @@ export default function VideoDownloader() {
                       </>
                     ) : (
                       <>
-                        <span>🔄</span>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
                         <span>Retry</span>
                       </>
                     )}
@@ -759,8 +819,11 @@ export default function VideoDownloader() {
           {/* Success Result */}
           {result?.success && (
             <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gradient-to-r from-[#fb923c]/20 to-[#1a1a1a] border-2 border-[#fb923c]/40 rounded-lg sm:rounded-xl">
-              <p className="text-[#fb923c] text-sm sm:text-base mb-3 font-semibold">
-                <span style={{ color: '#fb923c', fontSize: '18px' }}>✅</span> Download ready!
+              <p className="text-[#fb923c] text-sm sm:text-base mb-3 font-semibold flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Download ready!
                 {result.fileSize && result.fileSize > 0 && (
                   <span className="ml-2 text-sm sm:text-base font-semibold">
                     Actual size: {formatFileSize(result.fileSize)}
@@ -827,7 +890,7 @@ export default function VideoDownloader() {
                   className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 p-2 sm:p-3 bg-gradient-to-r from-[#fb923c]/20 to-[#1a1a1a] rounded-lg sm:rounded-xl hover:from-[#fb923c]/30 hover:to-[#1a1a1a] transition-colors duration-200 hover:shadow-md border border-[#fb923c]/40"
                 >
                   <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                    <span className="text-lg sm:text-xl md:text-2xl flex-shrink-0">{getPlatformIcon(entry.platform)}</span>
+                    <span className="flex-shrink-0">{getPlatformIcon(entry.platform)}</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs sm:text-sm md:text-base font-medium text-[#fb923c] truncate">
                         {entry.title}
@@ -844,17 +907,21 @@ export default function VideoDownloader() {
                   <div className="flex items-center gap-2 sm:ml-4 self-end sm:self-auto">
                     <button
                       onClick={() => handleHistoryDownload(entry.url)}
-                      className="px-2 sm:px-3 py-1.5 sm:py-1 text-xs sm:text-sm gradient-bg hover:opacity-90 text-white rounded-lg sm:rounded transition-all duration-200 hover:scale-110 transform shadow-sm font-medium"
+                      className="px-2 sm:px-3 py-1.5 sm:py-1 text-xs sm:text-sm gradient-bg hover:opacity-90 text-white rounded-lg sm:rounded transition-all duration-200 hover:scale-110 transform shadow-sm font-medium flex items-center justify-center"
                       title="Re-download"
                     >
-                      ⬇️
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
                     </button>
                     <button
                       onClick={() => deleteHistoryEntry(entry.id)}
-                      className="px-2 sm:px-3 py-1.5 sm:py-1 text-xs sm:text-sm bg-[#1a1a1a] hover:bg-[#fb923c]/20 text-[#fb923c] rounded-lg sm:rounded transition-all duration-200 hover:scale-110 transform shadow-sm font-medium border border-[#fb923c]/30"
+                      className="px-2 sm:px-3 py-1.5 sm:py-1 text-xs sm:text-sm bg-[#1a1a1a] hover:bg-[#fb923c]/20 text-[#fb923c] rounded-lg sm:rounded transition-all duration-200 hover:scale-110 transform shadow-sm font-medium border border-[#fb923c]/30 flex items-center justify-center"
                       title="Delete"
                     >
-                      🗑️
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
                     </button>
                   </div>
                 </div>
