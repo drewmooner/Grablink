@@ -6,6 +6,21 @@ import type { HistoryResponse } from "@/lib/types";
 
 export const runtime = "nodejs";
 
+// CORS headers
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+// Handle OPTIONS preflight requests
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: corsHeaders,
+  });
+}
+
 /**
  * Get download history
  */
@@ -27,7 +42,7 @@ export async function GET(request: NextRequest) {
         history,
         total: history.length,
       },
-      { status: 200 }
+      { status: 200, headers: corsHeaders }
     );
   } catch {
     return NextResponse.json<HistoryResponse>(
@@ -36,7 +51,7 @@ export async function GET(request: NextRequest) {
         history: [],
         total: 0,
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
@@ -52,7 +67,7 @@ export async function DELETE(request: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { success: false, error: "ID parameter is required" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -64,11 +79,11 @@ export async function DELETE(request: NextRequest) {
     const deleted = await deleteHistoryEntry(id, clientIp);
 
     if (deleted) {
-      return NextResponse.json({ success: true }, { status: 200 });
+      return NextResponse.json({ success: true }, { status: 200, headers: corsHeaders });
     } else {
       return NextResponse.json(
         { success: false, error: "History entry not found" },
-        { status: 404 }
+        { status: 404, headers: corsHeaders }
       );
     }
   } catch (error) {
@@ -76,7 +91,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json(
       { success: false, error: errorMessage },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
@@ -97,11 +112,11 @@ export async function POST(request: NextRequest) {
 
       await clearHistory(clientIp);
 
-      return NextResponse.json({ success: true }, { status: 200 });
+      return NextResponse.json({ success: true }, { status: 200, headers: corsHeaders });
     } else {
       return NextResponse.json(
         { success: false, error: "Invalid action. Use { action: 'clear' }" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
   } catch (error) {
@@ -109,7 +124,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { success: false, error: errorMessage },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

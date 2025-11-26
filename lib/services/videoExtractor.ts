@@ -517,8 +517,8 @@ export async function downloadVideo(
 
   try {
     const result = await execAsync(command, {
-      timeout: 300000, // 5 minutes timeout
-      maxBuffer: 50 * 1024 * 1024, // 50MB buffer
+      timeout: 900000, // 15 minutes timeout (increased for larger files)
+      maxBuffer: 100 * 1024 * 1024, // 100MB buffer (increased for verbose output)
     });
     stdout = result.stdout;
     stderr = result.stderr || "";
@@ -552,8 +552,8 @@ export async function downloadVideo(
       try {
         console.log("[downloadVideo] Retrying with fallback command:", fallbackCommand.substring(0, 200) + "...");
         const fallbackResult = await execAsync(fallbackCommand, {
-          timeout: 300000,
-          maxBuffer: 50 * 1024 * 1024,
+          timeout: 900000, // 15 minutes timeout
+          maxBuffer: 100 * 1024 * 1024, // 100MB buffer
         });
         stdout = fallbackResult.stdout;
         stderr = fallbackResult.stderr || "";

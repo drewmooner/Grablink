@@ -113,11 +113,13 @@ export async function buildYtDlpCommand(
   }
 
   // Standard options for all platforms
-  parts.push("--socket-timeout", "30");
-  parts.push("--retries", "3");
-  parts.push("--fragment-retries", "3");
-  parts.push("--extractor-retries", "3");
+  parts.push("--socket-timeout", "60"); // Increased from 30 to 60 seconds for larger files
+  parts.push("--retries", "5"); // Increased from 3 to 5 retries for better reliability
+  parts.push("--fragment-retries", "5"); // Increased from 3 to 5 retries
+  parts.push("--extractor-retries", "5"); // Increased from 3 to 5 retries
   parts.push("--no-check-certificate");
+  // Add options for better compatibility with different platforms
+  parts.push("--no-warnings"); // Reduce noise in output but keep important messages
 
   // Add format option (format string may contain special characters like brackets)
   if (options.format) {

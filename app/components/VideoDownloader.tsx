@@ -137,7 +137,8 @@ export default function VideoDownloader() {
 
   const loadHistory = async () => {
     try {
-      const response = await fetch("/api/video/history");
+      // Fetch history from Railway backend (where downloads are tracked)
+      const response = await fetch("https://resplendent-passion-production.up.railway.app/api/video/history");
       const data: HistoryResponse = await response.json();
       if (data.success) {
         setHistory(data);
@@ -334,7 +335,8 @@ export default function VideoDownloader() {
 
   const deleteHistoryEntry = async (id: string) => {
     try {
-      await fetch(`/api/video/history?id=${id}`, { method: "DELETE" });
+      // Delete from Railway backend
+      await fetch(`https://resplendent-passion-production.up.railway.app/api/video/history?id=${id}`, { method: "DELETE" });
       loadHistory();
     } catch (error) {
       console.error("Failed to delete history entry:", error);
@@ -343,7 +345,8 @@ export default function VideoDownloader() {
 
   const clearHistory = async () => {
     try {
-      await fetch("/api/video/history", {
+      // Clear from Railway backend
+      await fetch("https://resplendent-passion-production.up.railway.app/api/video/history", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "clear" }),

@@ -3,8 +3,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withRateLimit } from "@/lib/middleware/rateLimit";
 
-// Increase timeout for video processing
-export const maxDuration = 300; // 5 minutes timeout
+// Increase timeout for video processing (especially for larger files)
+export const maxDuration = 900; // 15 minutes timeout (increased for YouTube, Twitter, Pinterest large files)
 export const runtime = "nodejs";
 
 // CORS headers for cross-origin requests
