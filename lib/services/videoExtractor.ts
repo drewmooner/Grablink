@@ -490,6 +490,9 @@ export async function downloadVideo(
   console.log("[downloadVideo] Starting download - downloadId:", downloadId, "filePrefix:", filePrefix, "outputFile:", outputFile);
   console.log("[downloadVideo] Temp directory:", TEMP_DIR);
   
+  // Record start time to find files created after this point
+  const downloadStartTime = Date.now();
+  
   // Normalize URL
   let finalDownloadUrl = url.trim();
   if (!finalDownloadUrl.startsWith("http://") && !finalDownloadUrl.startsWith("https://")) {
@@ -573,39 +576,41 @@ export async function downloadVideo(
     throw new ExtractionError(parsedError.message, parsedError.code, { url, quality });
   }
 
-  // Extract actual file path from output - yt-dlp outputs paths in various formats
-  // Check multiple patterns including progress output
-  const patterns = [
-    /\[download\] Destination: (.+)/,
-    /\[download\] (.+) has already been downloaded/,
-    /\[Merger\] Merging formats into "(.+)"/,
-    /\[download\] 100% of (.+)/,
-    /\[download\] (.+) has already been downloaded and merged/,
-    /\[download\] (.+\.(mp4|webm|mkv|m4a|flv|avi|mov|wmv))/i, // Generic pattern for video files
-    /(?:^|\n)(.+\.(mp4|webm|mkv|m4a|flv|avi|mov|wmv))(?:\s|$)/i, // Standalone file path
-    /Writing video metadata to (.+)/i,
-    /\[ExtractAudio\] Destination: (.+)/i,
-  ];
-
+  // Extract actual file path from output
   let filePath: string | null = null;
   
-  // Combine stdout and stderr for pattern matching
-  const combinedOutput = stdout + "\n" + stderr;
-  
-  for (const pattern of patterns) {
-    const matches = combinedOutput.match(pattern);
-    if (matches && matches[1]) {
-      const candidatePath = matches[1].trim().replace(/^["']|["']$/g, '');
-      // Check if it's an absolute path or relative to TEMP_DIR
-      if (path.isAbsolute(candidatePath)) {
-        filePath = candidatePath;
-      } else if (!candidatePath.includes('..')) {
-        // Safe relative path
-        filePath = path.resolve(TEMP_DIR, candidatePath);
-      }
-      if (filePath) {
-        console.log("[downloadVideo] Extracted file path from output pattern:", pattern.toString(), "filePath:", filePath);
-        break;
+  // First, try to extract from stdout/stderr using patterns
+  if (!filePath) {
+    const patterns = [
+      /\[download\] Destination: (.+)/,
+      /\[download\] (.+) has already been downloaded/,
+      /\[Merger\] Merging formats into "(.+)"/,
+      /\[download\] 100% of (.+)/,
+      /\[download\] (.+) has already been downloaded and merged/,
+      /\[download\] (.+\.(mp4|webm|mkv|m4a|flv|avi|mov|wmv))/i, // Generic pattern for video files
+      /(?:^|\n)(.+\.(mp4|webm|mkv|m4a|flv|avi|mov|wmv))(?:\s|$)/i, // Standalone file path
+      /Writing video metadata to (.+)/i,
+      /\[ExtractAudio\] Destination: (.+)/i,
+    ];
+    
+    // Combine stdout and stderr for pattern matching
+    const combinedOutput = stdout + "\n" + stderr;
+    
+    for (const pattern of patterns) {
+      const matches = combinedOutput.match(pattern);
+      if (matches && matches[1]) {
+        const candidatePath = matches[1].trim().replace(/^["']|["']$/g, '');
+        // Check if it's an absolute path or relative to TEMP_DIR
+        if (path.isAbsolute(candidatePath)) {
+          filePath = candidatePath;
+        } else if (!candidatePath.includes('..')) {
+          // Safe relative path
+          filePath = path.resolve(TEMP_DIR, candidatePath);
+        }
+        if (filePath) {
+          console.log("[downloadVideo] Extracted file path from output pattern:", pattern.toString(), "filePath:", filePath);
+          break;
+        }
       }
     }
   }
@@ -702,15 +707,21 @@ export async function downloadVideo(
         
         const validFiles = filesWithStats.filter(f => f !== null && f.size > 0) as Array<{name: string, fullPath: string, mtime: number, size: number, hasDownloadId?: boolean}>;
         if (validFiles.length > 0) {
+          // Filter to only files created after download started (within last 10 minutes to be safe)
+          const minMtime = downloadStartTime - (10 * 60 * 1000); // 10 minutes before start
+          const recentFiles = validFiles.filter(f => f.mtime >= minMtime);
+          
+          const filesToCheck = recentFiles.length > 0 ? recentFiles : validFiles;
+          
           // Prefer files with download ID, then sort by modification time (newest first)
-          const sorted = validFiles.sort((a, b) => {
+          const sorted = filesToCheck.sort((a, b) => {
             if (a.hasDownloadId && !b.hasDownloadId) return -1;
             if (!a.hasDownloadId && b.hasDownloadId) return 1;
             return b.mtime - a.mtime;
           });
           const newest = sorted[0];
           filePath = newest.fullPath; // Use absolute path
-          console.log("[downloadVideo] Found file by scanning directory - downloadId:", downloadId, "filePath:", filePath, "hasDownloadId:", newest.hasDownloadId, "size:", newest.size, "mtime:", new Date(newest.mtime).toISOString());
+          console.log("[downloadVideo] Found file by scanning directory - downloadId:", downloadId, "filePath:", filePath, "hasDownloadId:", newest.hasDownloadId, "size:", newest.size, "mtime:", new Date(newest.mtime).toISOString(), "created after download start:", newest.mtime >= downloadStartTime);
         } else {
           console.error("[downloadVideo] No valid video files found (all were empty or inaccessible)");
         }

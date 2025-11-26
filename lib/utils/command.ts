@@ -152,6 +152,9 @@ export async function buildYtDlpCommand(
     parts.push("--no-download");
   }
 
+  // Note: We don't use --print here because it can interfere with output parsing
+  // Instead, we rely on directory scanning to find the downloaded file
+
   // Add URL with proper escaping (always last)
   parts.push(escapeUrl(url));
 
