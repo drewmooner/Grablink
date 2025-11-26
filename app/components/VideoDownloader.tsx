@@ -198,9 +198,14 @@ export default function VideoDownloader() {
 
       // Auto-download immediately if URL is available with progress tracking
       if (downloadData.download?.url) {
+        // Convert relative URL to full Railway URL
+        const streamUrl = downloadData.download.url.startsWith('http')
+          ? downloadData.download.url
+          : `https://resplendent-passion-production.up.railway.app${downloadData.download.url}`;
+        
         // Start download immediately - no delay
         triggerDownloadWithProgress(
-          downloadData.download.url,
+          streamUrl,
           downloadData.video?.filename || "video",
           downloadData.video?.size || 0
         );

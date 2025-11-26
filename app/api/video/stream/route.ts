@@ -10,6 +10,21 @@ import * as os from "os";
 
 const TEMP_DIR = path.join(os.tmpdir(), "grablink-downloads");
 
+// CORS headers
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+// Handle OPTIONS preflight requests
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: corsHeaders,
+  });
+}
+
 // Ensure temp directory exists
 async function ensureTempDir(): Promise<void> {
   try {
@@ -26,7 +41,10 @@ export async function GET(request: NextRequest) {
     const downloadId = searchParams.get("downloadId");
 
     if (!downloadId) {
-      return new NextResponse("downloadId parameter is required", { status: 400 });
+      return new NextResponse("downloadId parameter is required", { 
+        status: 400,
+        headers: corsHeaders 
+      });
     }
 
     // Ensure temp directory exists
@@ -154,7 +172,10 @@ export async function GET(request: NextRequest) {
 
     if (!download || !normalizedPath) {
       console.error("[stream] ❌ Download not found in cache or file system - downloadId:", downloadId);
-      return new NextResponse(`Download not found or expired (downloadId: ${downloadId})`, { status: 404 });
+      return new NextResponse(`Download not found or expired (downloadId: ${downloadId})`, { 
+        status: 404,
+        headers: corsHeaders 
+      });
     }
     
     console.log("[stream] ✅ Download found - downloadId:", downloadId, "filename:", download.filename, "filePath:", normalizedPath);
@@ -165,7 +186,10 @@ export async function GET(request: NextRequest) {
       const stats = await fs.stat(normalizedPath);
       if (stats.size === 0) {
         console.error("[stream] File is empty:", normalizedPath);
-        return new NextResponse("File is empty", { status: 404 });
+        return new NextResponse("File is empty", { 
+          status: 404,
+          headers: corsHeaders 
+        });
       }
       console.log("[stream] File exists, size:", stats.size);
     } catch (error) {
@@ -179,7 +203,10 @@ export async function GET(request: NextRequest) {
       } catch (dirError) {
         console.error("[stream] Could not read directory:", dirError);
       }
-      return new NextResponse(`File not found at: ${normalizedPath}`, { status: 404 });
+      return new NextResponse(`File not found at: ${normalizedPath}`, { 
+        status: 404,
+        headers: corsHeaders 
+      });
     }
 
     // Read file using normalized path
@@ -202,10 +229,11 @@ export async function GET(request: NextRequest) {
     const escapedFilename = download.filename.replace(/["\\]/g, '\\$&');
     const encodedFilename = encodeURIComponent(download.filename);
 
-    // Return file with proper headers
+    // Return file with proper headers including CORS
     return new NextResponse(fileBuffer, {
       status: 200,
       headers: {
+        ...corsHeaders,
         "Content-Type": contentType,
         "Content-Disposition": `attachment; filename="${escapedFilename}"; filename*=UTF-8''${encodedFilename}`,
         "Content-Length": fileStats.size.toString(),
@@ -215,7 +243,10 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return new NextResponse(`Error: ${errorMessage}`, { status: 500 });
+    return new NextResponse(`Error: ${errorMessage}`, { 
+      status: 500,
+      headers: corsHeaders 
+    });
   }
 }
 

@@ -104,8 +104,10 @@ export async function extractAudio(
   }
 
   // Use downloadId in the output filename for reliable tracking
-  const outputPath = path.resolve(TEMP_DIR, `${downloadId || `audio_${Date.now()}`}.${outputFormat}`);
-  console.log("[extractAudio] Starting audio extraction - downloadId:", downloadId, "outputPath:", outputPath);
+  // Sanitize downloadId to match the same logic used in downloadVideo
+  const sanitizedId = downloadId ? downloadId.replace(/[^a-z0-9_]/gi, '_') : `audio_${Date.now()}`;
+  const outputPath = path.resolve(TEMP_DIR, `${sanitizedId}.${outputFormat}`);
+  console.log("[extractAudio] Starting audio extraction - downloadId:", downloadId, "sanitizedId:", sanitizedId, "outputPath:", outputPath);
 
   return new Promise((resolve, reject) => {
     let hasResolved = false;

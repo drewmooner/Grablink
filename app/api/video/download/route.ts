@@ -221,7 +221,7 @@ async function handleDownload(request: NextRequest) {
           },
           download: {
             method: "proxy",
-            url: `/api/video/stream?downloadId=${downloadId}`,
+            url: `/api/video/stream?downloadId=${encodeURIComponent(downloadId)}`,
             expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(), // 1 hour
             directUrl: null,
           },
