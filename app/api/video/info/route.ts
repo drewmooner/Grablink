@@ -34,7 +34,14 @@ async function handleInfo(request: NextRequest) {
             message: "URL is required and must be a string",
           },
         },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+          },
+        }
       );
     }
 
@@ -56,7 +63,14 @@ async function handleInfo(request: NextRequest) {
             message: "Invalid URL format. Please provide a valid HTTP or HTTPS URL",
           },
         },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+          },
+        }
       );
     }
 
@@ -65,6 +79,11 @@ async function handleInfo(request: NextRequest) {
 
     return NextResponse.json<VideoInfoResponse>(result, {
       status: result.success ? 200 : 500,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
     });
   } catch (error) {
     // Log the full error for debugging
@@ -90,10 +109,29 @@ async function handleInfo(request: NextRequest) {
           code: "SERVER_ERROR",
           message: errorMessage,
         },
-      },
-      { status: 500 }
+        },
+        { 
+          status: 500,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+          },
+        }
     );
   }
+}
+
+// Handle OPTIONS requests for CORS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    },
+  });
 }
 
 // Apply rate limiting (30 requests per hour per IP)
@@ -130,7 +168,14 @@ async function handleInfoGet(request: NextRequest) {
             message: "URL query parameter is required",
           },
         },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+          },
+        }
       );
     }
 
@@ -151,7 +196,14 @@ async function handleInfoGet(request: NextRequest) {
             message: "Invalid URL format. Please provide a valid HTTP or HTTPS URL",
           },
         },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+          },
+        }
       );
     }
 
@@ -159,6 +211,11 @@ async function handleInfoGet(request: NextRequest) {
 
     return NextResponse.json<VideoInfoResponse>(result, {
       status: result.success ? 200 : 500,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
@@ -179,7 +236,14 @@ async function handleInfoGet(request: NextRequest) {
           message: errorMessage,
         },
       },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+        },
+      }
     );
   }
 }

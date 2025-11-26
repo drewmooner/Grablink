@@ -6,6 +6,13 @@ import { withRateLimit } from "@/lib/middleware/rateLimit";
 // Increase timeout for video processing
 export const maxDuration = 300; // 5 minutes timeout
 export const runtime = "nodejs";
+
+// CORS headers for cross-origin requests
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
 import { downloadVideo } from "@/lib/services/videoExtractor";
 import { extractAudio, cleanupTempFile } from "@/lib/services/audioExtractor";
 import { generateDownloadId, storeDownload } from "@/lib/services/downloadCache";
@@ -51,7 +58,7 @@ async function handleDownload(request: NextRequest) {
             message: "URL is required and must be a string",
           },
         },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -66,7 +73,7 @@ async function handleDownload(request: NextRequest) {
             message: "Invalid URL format. Please provide a valid HTTP or HTTPS URL",
           },
         },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -82,7 +89,7 @@ async function handleDownload(request: NextRequest) {
             message: "TikTok is currently not supported. We're working on adding support for other platforms. Please try Instagram, YouTube, Twitter, or other supported platforms.",
           },
         },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -223,7 +230,7 @@ async function handleDownload(request: NextRequest) {
             author: metadata.uploader_id || metadata.uploader || "Unknown",
           },
         },
-        { status: 200 }
+        { status: 200, headers: corsHeaders }
       );
     } catch (error) {
       // Log the full error for debugging
@@ -244,7 +251,7 @@ async function handleDownload(request: NextRequest) {
               details: error.details,
             },
           },
-          { status: 500 }
+          { status: 500, headers: corsHeaders }
         );
       }
 
@@ -260,7 +267,7 @@ async function handleDownload(request: NextRequest) {
             message: `Failed to download video: ${errorMessage}`,
           },
         },
-        { status: 500 }
+        { status: 500, headers: corsHeaders }
       );
     }
   } catch (error) {
@@ -281,9 +288,17 @@ async function handleDownload(request: NextRequest) {
           message: errorMessage,
         },
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
+}
+
+// Handle OPTIONS requests for CORS preflight
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: corsHeaders,
+  });
 }
 
 // Apply rate limiting (20 downloads per hour per IP)
