@@ -488,6 +488,7 @@ export async function downloadVideo(
   const outputFile = outputPath || path.join(TEMP_DIR, `${filePrefix}.%(ext)s`);
   
   console.log("[downloadVideo] Starting download - downloadId:", downloadId, "filePrefix:", filePrefix, "outputFile:", outputFile);
+  console.log("[downloadVideo] Temp directory:", TEMP_DIR);
   
   // Normalize URL
   let finalDownloadUrl = url.trim();
@@ -580,24 +581,30 @@ export async function downloadVideo(
     /\[Merger\] Merging formats into "(.+)"/,
     /\[download\] 100% of (.+)/,
     /\[download\] (.+) has already been downloaded and merged/,
-    /\[download\] (.+\.(mp4|webm|mkv|m4a))/i, // Generic pattern for video files
+    /\[download\] (.+\.(mp4|webm|mkv|m4a|flv|avi|mov|wmv))/i, // Generic pattern for video files
+    /(?:^|\n)(.+\.(mp4|webm|mkv|m4a|flv|avi|mov|wmv))(?:\s|$)/i, // Standalone file path
+    /Writing video metadata to (.+)/i,
+    /\[ExtractAudio\] Destination: (.+)/i,
   ];
 
   let filePath: string | null = null;
-  for (const pattern of patterns) {
-    const match = stdout.match(pattern);
-    if (match && match[1]) {
-      filePath = match[1].trim();
-      break;
-    }
-  }
   
-  // Also check stderr for file paths (yt-dlp sometimes outputs to stderr)
-  if (!filePath) {
-    for (const pattern of patterns) {
-      const match = stderr.match(pattern);
-      if (match && match[1]) {
-        filePath = match[1].trim();
+  // Combine stdout and stderr for pattern matching
+  const combinedOutput = stdout + "\n" + stderr;
+  
+  for (const pattern of patterns) {
+    const matches = combinedOutput.match(pattern);
+    if (matches && matches[1]) {
+      const candidatePath = matches[1].trim().replace(/^["']|["']$/g, '');
+      // Check if it's an absolute path or relative to TEMP_DIR
+      if (path.isAbsolute(candidatePath)) {
+        filePath = candidatePath;
+      } else if (!candidatePath.includes('..')) {
+        // Safe relative path
+        filePath = path.resolve(TEMP_DIR, candidatePath);
+      }
+      if (filePath) {
+        console.log("[downloadVideo] Extracted file path from output pattern:", pattern.toString(), "filePath:", filePath);
         break;
       }
     }
@@ -611,30 +618,73 @@ export async function downloadVideo(
     console.log("[downloadVideo] Extracted file path from output - downloadId:", downloadId, "filePath:", filePath);
   }
   
+  // Also try to construct expected filename from output template
+  // yt-dlp might have saved it with a specific extension
+  if (!filePath) {
+    const commonExtensions = ['mp4', 'webm', 'mkv', 'm4a', 'flv', 'avi'];
+    for (const ext of commonExtensions) {
+      const expectedPath = path.join(TEMP_DIR, `${filePrefix}.${ext}`);
+      try {
+        await fs.access(expectedPath);
+        const stats = await fs.stat(expectedPath);
+        if (stats.size > 0) {
+          filePath = expectedPath;
+          console.log("[downloadVideo] Found file using expected filename:", filePath);
+          break;
+        }
+      } catch {
+        // File doesn't exist with this extension
+      }
+    }
+  }
+  
   // If still no file path, scan temp directory for the newest video file
+  // This is the fallback - check ALL video files, not just ones with specific prefixes
   if (!filePath) {
     try {
       const files = await fs.readdir(TEMP_DIR);
       // If we have a downloadId, look for files starting with it first
       const prefix = downloadId ? downloadId.replace(/[^a-z0-9_]/gi, '_') : null;
       console.log("[downloadVideo] Scanning temp directory for file - downloadId:", downloadId, "prefix:", prefix);
-      console.log("[downloadVideo] Files in temp directory:", files.length);
+      console.log("[downloadVideo] Total files in temp directory:", files.length);
+      console.log("[downloadVideo] Sample files:", files.slice(0, 10).join(", "));
       
-      const videoFiles = files
-        .filter((f) => {
-          const lower = f.toLowerCase();
-          const hasVideoExt = lower.endsWith(".mp4") || lower.endsWith(".webm") || lower.endsWith(".mkv") || lower.endsWith(".m4a");
-          if (prefix && f.startsWith(prefix)) {
-            console.log("[downloadVideo] Found file matching downloadId prefix:", f);
-            return hasVideoExt; // Prefer files with download ID
-          }
-          return (f.startsWith("video_") || f.startsWith("grablink_") || (prefix && f.startsWith(prefix))) && hasVideoExt;
-        })
-        .map(f => ({
-          name: f,
-          fullPath: path.resolve(TEMP_DIR, f),
-          hasDownloadId: prefix ? f.startsWith(prefix) : false
-        }));
+      // First, try to find files matching the downloadId prefix
+      let videoFiles: Array<{name: string, fullPath: string, hasDownloadId: boolean}> = [];
+      
+      if (prefix) {
+        const prefixFiles = files
+          .filter((f) => {
+            const lower = f.toLowerCase();
+            const hasVideoExt = lower.endsWith(".mp4") || lower.endsWith(".webm") || lower.endsWith(".mkv") || lower.endsWith(".m4a") || lower.endsWith(".flv") || lower.endsWith(".avi");
+            return f.startsWith(prefix) && hasVideoExt;
+          })
+          .map(f => ({
+            name: f,
+            fullPath: path.resolve(TEMP_DIR, f),
+            hasDownloadId: true
+          }));
+        
+        if (prefixFiles.length > 0) {
+          console.log("[downloadVideo] Found", prefixFiles.length, "files matching downloadId prefix:", prefix);
+          videoFiles = prefixFiles;
+        }
+      }
+      
+      // If no files with downloadId prefix, check ALL video files (less restrictive)
+      if (videoFiles.length === 0) {
+        console.log("[downloadVideo] No files with downloadId prefix, checking all video files");
+        videoFiles = files
+          .filter((f) => {
+            const lower = f.toLowerCase();
+            return lower.endsWith(".mp4") || lower.endsWith(".webm") || lower.endsWith(".mkv") || lower.endsWith(".m4a") || lower.endsWith(".flv") || lower.endsWith(".avi");
+          })
+          .map(f => ({
+            name: f,
+            fullPath: path.resolve(TEMP_DIR, f),
+            hasDownloadId: false
+          }));
+      }
       
       if (videoFiles.length > 0) {
         console.log("[downloadVideo] Found", videoFiles.length, "potential video files");
@@ -643,16 +693,16 @@ export async function downloadVideo(
           videoFiles.map(async (f) => {
             try {
               const stats = await fs.stat(f.fullPath);
-              return { ...f, mtime: stats.mtime.getTime() };
+              return { ...f, mtime: stats.mtime.getTime(), size: stats.size };
             } catch {
               return null;
             }
           })
         );
         
-        const validFiles = filesWithStats.filter(f => f !== null) as Array<{name: string, fullPath: string, mtime: number, hasDownloadId?: boolean}>;
+        const validFiles = filesWithStats.filter(f => f !== null && f.size > 0) as Array<{name: string, fullPath: string, mtime: number, size: number, hasDownloadId?: boolean}>;
         if (validFiles.length > 0) {
-          // Prefer files with download ID, then sort by modification time
+          // Prefer files with download ID, then sort by modification time (newest first)
           const sorted = validFiles.sort((a, b) => {
             if (a.hasDownloadId && !b.hasDownloadId) return -1;
             if (!a.hasDownloadId && b.hasDownloadId) return 1;
@@ -660,10 +710,13 @@ export async function downloadVideo(
           });
           const newest = sorted[0];
           filePath = newest.fullPath; // Use absolute path
-          console.log("[downloadVideo] Found file by scanning directory - downloadId:", downloadId, "filePath:", filePath, "hasDownloadId:", newest.hasDownloadId);
+          console.log("[downloadVideo] Found file by scanning directory - downloadId:", downloadId, "filePath:", filePath, "hasDownloadId:", newest.hasDownloadId, "size:", newest.size, "mtime:", new Date(newest.mtime).toISOString());
+        } else {
+          console.error("[downloadVideo] No valid video files found (all were empty or inaccessible)");
         }
       } else {
-        console.error("[downloadVideo] No video files found in temp directory matching criteria");
+        console.error("[downloadVideo] No video files found in temp directory");
+        console.error("[downloadVideo] Available files:", files.join(", "));
       }
     } catch (readError) {
       console.error("[downloadVideo] Error reading temp directory:", readError);
@@ -687,34 +740,53 @@ export async function downloadVideo(
   filePath = path.normalize(filePath);
 
   // Wait a bit for file to be fully written (yt-dlp might still be writing)
-  let retries = 5;
+  // Increase wait time and retries for slower systems
+  let retries = 10;
   let fileExists = false;
+  let lastError: Error | null = null;
+  
   while (retries > 0) {
     try {
       await fs.access(filePath);
       const stats = await fs.stat(filePath);
       if (stats.size > 0) {
         fileExists = true;
-        console.log("[downloadVideo] File verified:", filePath, "Size:", stats.size);
+        console.log("[downloadVideo] File verified:", filePath, "Size:", stats.size, "bytes");
         break;
+      } else {
+        console.log("[downloadVideo] File exists but is empty, waiting... (retries left:", retries, ")");
       }
-    } catch {
-      // File not ready yet
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      // File not ready yet or doesn't exist
     }
     retries--;
     if (retries > 0) {
-      await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms
+      // Wait longer on each retry (exponential backoff)
+      const waitTime = 500 + (10 - retries) * 200; // 500ms, 700ms, 900ms, etc.
+      console.log("[downloadVideo] Waiting", waitTime, "ms before retry", (10 - retries + 1), "of 10");
+      await new Promise(resolve => setTimeout(resolve, waitTime));
     }
   }
 
   if (!fileExists) {
     console.error("[downloadVideo] File not found after retries:", filePath);
+    console.error("[downloadVideo] Last error:", lastError?.message);
     console.error("[downloadVideo] stdout sample:", stdout.substring(0, 1000));
-    console.error("[downloadVideo] stderr sample:", stderr.substring(0, 500));
+    console.error("[downloadVideo] stderr sample:", stderr.substring(0, 1000));
+    
+    // Try one more time to list files in the directory for debugging
+    try {
+      const files = await fs.readdir(TEMP_DIR);
+      console.error("[downloadVideo] Files in temp directory:", files.join(", "));
+    } catch (dirError) {
+      console.error("[downloadVideo] Could not list temp directory:", dirError);
+    }
+    
     throw new ExtractionError(
       "Downloaded file not found - file may not have been saved by yt-dlp",
       "FILE_NOT_FOUND",
-      { filePath, url, stdout: stdout.substring(0, 500) }
+      { filePath, url, stdout: stdout.substring(0, 500), stderr: stderr.substring(0, 500) }
     );
   }
 
