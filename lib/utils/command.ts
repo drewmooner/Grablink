@@ -122,10 +122,11 @@ export async function buildYtDlpCommand(
   parts.push("--no-warnings"); // Reduce noise in output but keep important messages
   
   // Speed optimizations - download fragments concurrently for faster downloads
-  parts.push("--concurrent-fragments", "4"); // Download 4 fragments simultaneously (speeds up downloads significantly)
+  // Use equals sign format to ensure proper argument parsing
+  parts.push("--concurrent-fragments=4"); // Download 4 fragments simultaneously (speeds up downloads significantly)
   parts.push("--no-part"); // Don't use .part files (faster, but less resumable)
   parts.push("--hls-prefer-native"); // Use native HLS downloader when possible (faster)
-  parts.push("--external-downloader-args", "ffmpeg:-threads 4"); // Use multiple threads for FFmpeg processing
+  // Note: Removed --external-downloader-args as it can cause parsing issues
 
   // Add format option (format string may contain special characters like brackets)
   if (options.format) {

@@ -45,13 +45,24 @@ async function handleInfo(request: NextRequest) {
       );
     }
 
+    // Smart URL validation and normalization
+    let normalizedUrl = url.trim();
+    
+    // Try to normalize the URL (add https:// if missing)
+    if (!normalizedUrl.match(/^https?:\/\//i)) {
+      // Check if it looks like a URL (has a domain)
+      if (normalizedUrl.includes(".") && !normalizedUrl.includes(" ")) {
+        normalizedUrl = "https://" + normalizedUrl;
+      }
+    }
+    
     // Validate URL format
-    if (!isValidUrl(url)) {
+    if (!isValidUrl(normalizedUrl)) {
       return NextResponse.json<VideoInfoResponse>(
         {
           success: false,
           platform: "unknown",
-          url,
+          url: normalizedUrl,
           qualities: [],
           downloadOptions: {
             recommendedMethod: "proxy",
@@ -60,7 +71,7 @@ async function handleInfo(request: NextRequest) {
           },
           error: {
             code: "INVALID_URL",
-            message: "Invalid URL format. Please provide a valid HTTP or HTTPS URL",
+            message: `Invalid URL format: "${url}". Please provide a valid HTTP or HTTPS URL`,
           },
         },
         { 
@@ -73,6 +84,9 @@ async function handleInfo(request: NextRequest) {
         }
       );
     }
+    
+    // Use normalized URL for processing
+    url = normalizedUrl;
 
     // Get video info
     const result = await getVideoInfo(url);

@@ -493,13 +493,40 @@ export async function downloadVideo(
   // Record start time to find files created after this point
   const downloadStartTime = Date.now();
   
-  // Normalize URL
+  // Smart URL normalization - handle various URL formats
   let finalDownloadUrl = url.trim();
-  if (!finalDownloadUrl.startsWith("http://") && !finalDownloadUrl.startsWith("https://")) {
-    finalDownloadUrl = "https://" + finalDownloadUrl;
+  
+  // Remove any whitespace
+  finalDownloadUrl = finalDownloadUrl.trim();
+  
+  // If URL doesn't start with http:// or https://, try to add it
+  if (!finalDownloadUrl.match(/^https?:\/\//i)) {
+    // Check if it looks like a URL (has a domain)
+    if (finalDownloadUrl.includes(".") && !finalDownloadUrl.includes(" ")) {
+      finalDownloadUrl = "https://" + finalDownloadUrl;
+    } else {
+      throw new ExtractionError(
+        `Invalid URL format: "${url}". Please provide a valid URL starting with http:// or https://`,
+        "INVALID_URL",
+        { url }
+      );
+    }
   }
-  finalDownloadUrl = finalDownloadUrl.replace(/\/+$/, "");
-  finalDownloadUrl = finalDownloadUrl.replace(/([^:]\/)\/+/g, "$1");
+  
+  // Normalize URL - remove trailing slashes and fix double slashes
+  finalDownloadUrl = finalDownloadUrl.replace(/\/+$/, ""); // Remove trailing slashes
+  finalDownloadUrl = finalDownloadUrl.replace(/([^:]\/)\/+/g, "$1"); // Fix double slashes (but not in protocol)
+  
+  // Validate the URL is actually valid
+  try {
+    new URL(finalDownloadUrl);
+  } catch {
+    throw new ExtractionError(
+      `Invalid URL format: "${url}". Could not parse as a valid URL.`,
+      "INVALID_URL",
+      { url, normalized: finalDownloadUrl }
+    );
+  }
 
   // Download video in best available quality
   // Removed 720p limit to ensure all videos download regardless of size
