@@ -10,47 +10,73 @@ import { escapePath } from "@/lib/utils/command";
 // Lazy initialization of FFmpeg path to avoid Next.js build issues
 let ffmpegPathInitialized = false;
 
-function initializeFfmpegPath() {
+async function findFfmpegPath(): Promise<string | null> {
+  const platform = os.platform();
+  const arch = os.arch();
+  const platformArch = `${platform}-${arch}`;
+  const binary = platform === "win32" ? "ffmpeg.exe" : "ffmpeg";
+  
+  // First, try to find FFmpeg in node_modules (@ffmpeg-installer)
+  const fsSync = require("fs");
+  const possiblePaths = [
+    // npm3+ flat structure (most common)
+    path.join(process.cwd(), "node_modules", "@ffmpeg-installer", platformArch, binary),
+    // npm2 nested structure
+    path.join(process.cwd(), "node_modules", "@ffmpeg-installer", "ffmpeg", "node_modules", "@ffmpeg-installer", platformArch, binary),
+    // Alternative nested structure
+    path.join(process.cwd(), "node_modules", "@ffmpeg-installer", "ffmpeg", "..", platformArch, binary),
+  ];
+  
+  for (const possiblePath of possiblePaths) {
+    try {
+      if (fsSync.existsSync(possiblePath)) {
+        console.log("[initializeFfmpegPath] Found FFmpeg in node_modules:", possiblePath);
+        return possiblePath;
+      }
+    } catch {
+      // Continue to next path
+    }
+  }
+  
+  // If not found in node_modules, try to find system FFmpeg using 'which' or 'where'
+  try {
+    const { exec } = require("child_process");
+    const { promisify } = require("util");
+    const execAsync = promisify(exec);
+    
+    const command = platform === "win32" ? "where ffmpeg" : "which ffmpeg";
+    try {
+      const { stdout } = await execAsync(command, { timeout: 5000 });
+      const systemPath = stdout.trim().split('\n')[0]; // Get first result
+      if (systemPath && fsSync.existsSync(systemPath)) {
+        console.log("[initializeFfmpegPath] Found system FFmpeg:", systemPath);
+        return systemPath;
+      }
+    } catch {
+      // which/where command failed, continue
+    }
+  } catch (error) {
+    // Error finding system FFmpeg, continue
+  }
+  
+  return null;
+}
+
+async function initializeFfmpegPath() {
   if (ffmpegPathInitialized) return;
   
   try {
-    let ffmpegPath: string | null = null;
-    const platform = os.platform();
-    const arch = os.arch();
-    const platformArch = `${platform}-${arch}`;
-    const binary = platform === "win32" ? "ffmpeg.exe" : "ffmpeg";
-    
-    // Manually resolve FFmpeg path to avoid Next.js bundling issues
-    // This matches the logic from @ffmpeg-installer/ffmpeg but avoids importing it
-    const fsSync = require("fs");
-    const possiblePaths = [
-      // npm3+ flat structure (most common)
-      path.join(process.cwd(), "node_modules", "@ffmpeg-installer", platformArch, binary),
-      // npm2 nested structure
-      path.join(process.cwd(), "node_modules", "@ffmpeg-installer", "ffmpeg", "node_modules", "@ffmpeg-installer", platformArch, binary),
-      // Alternative nested structure
-      path.join(process.cwd(), "node_modules", "@ffmpeg-installer", "ffmpeg", "..", platformArch, binary),
-    ];
-    
-    for (const possiblePath of possiblePaths) {
-      try {
-        if (fsSync.existsSync(possiblePath)) {
-          ffmpegPath = possiblePath;
-          break;
-        }
-      } catch {
-        // Continue to next path
-      }
-    }
+    const ffmpegPath = await findFfmpegPath();
 
     if (ffmpegPath) {
       ffmpeg.setFfmpegPath(ffmpegPath);
+      console.log("[initializeFfmpegPath] FFmpeg path set successfully:", ffmpegPath);
     } else {
-      console.warn("FFmpeg not found in node_modules, will try system FFmpeg from PATH");
+      console.warn("[initializeFfmpegPath] FFmpeg not found in node_modules or system PATH, fluent-ffmpeg will try to use system FFmpeg");
     }
     // If no path found, fluent-ffmpeg will try to use system FFmpeg from PATH
   } catch (error) {
-    console.error("Failed to set FFmpeg path:", error);
+    console.error("[initializeFfmpegPath] Failed to set FFmpeg path:", error);
     // Will try to use system FFmpeg as fallback
   }
   
@@ -68,8 +94,8 @@ export async function extractAudio(
   bitrate: string = "256k", // Increased to 256k for better audio quality
   downloadId?: string // Pass downloadId for filename
 ): Promise<string> {
-  // Initialize FFmpeg path on first use
-  initializeFfmpegPath();
+  // Initialize FFmpeg path on first use (await to ensure path is found)
+  await initializeFfmpegPath();
 
   // Validate input file exists
   try {
@@ -135,9 +161,14 @@ export async function extractAudio(
       .on("start", (commandLine) => {
         // FFmpeg process started
         console.log("[extractAudio] FFmpeg command:", commandLine);
+        console.log("[extractAudio] Input file:", videoPath);
+        console.log("[extractAudio] Output file:", outputPath);
       })
       .on("progress", (progress) => {
-        // Progress updates (optional)
+        // Progress updates
+        if (progress.percent) {
+          console.log("[extractAudio] Progress:", Math.round(progress.percent), "%");
+        }
       })
       .on("end", async () => {
         if (hasResolved) return;
@@ -189,13 +220,15 @@ export async function extractAudio(
         clearTimeout(timeout);
 
         const errorMessage = err.message || "Unknown FFmpeg error";
+        console.error("[extractAudio] FFmpeg error:", errorMessage);
+        console.error("[extractAudio] Error details:", err);
         const parsedError = parseFFmpegError(errorMessage);
         
         reject(
           new ExtractionError(
-            parsedError.message,
-            parsedError.code,
-            { videoPath, outputFormat, originalError: errorMessage }
+            parsedError.message || `FFmpeg error: ${errorMessage}`,
+            parsedError.code || "FFMPEG_ERROR",
+            { videoPath, outputFormat, outputPath, originalError: errorMessage }
           )
         );
       })
@@ -208,13 +241,15 @@ export async function extractAudio(
       clearTimeout(timeout);
 
       const errorMessage = err.message || "Unknown FFmpeg process error";
+      console.error("[extractAudio] FFmpeg process error:", errorMessage);
+      console.error("[extractAudio] Process error details:", err);
       const parsedError = parseFFmpegError(errorMessage);
       
       reject(
         new ExtractionError(
-          parsedError.message,
-          parsedError.code,
-          { videoPath, outputFormat, originalError: errorMessage }
+          parsedError.message || `FFmpeg process error: ${errorMessage}`,
+          parsedError.code || "FFMPEG_PROCESS_ERROR",
+          { videoPath, outputFormat, outputPath, originalError: errorMessage }
         )
       );
     });
