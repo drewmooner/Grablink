@@ -44,7 +44,9 @@ export async function GET(request: NextRequest) {
       },
       { status: 200, headers: corsHeaders }
     );
-  } catch {
+  } catch (error) {
+    // Log error for debugging but return empty history
+    console.error("[history/GET] Error getting history:", error);
     return NextResponse.json<HistoryResponse>(
       {
         success: false,
