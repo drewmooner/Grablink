@@ -1,92 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-
 export default function Footer() {
   const currentYear = new Date().getFullYear();
-  const [downloadStats, setDownloadStats] = useState<{ video: number; audio: number } | null>(null);
-
-  useEffect(() => {
-    const fetchDownloadStats = async () => {
-      try {
-        // Fetch events with date range (last 365 days to get all events)
-        const now = Date.now();
-        const startAt = 0; // Start from beginning
-        const endAt = now;
-        
-        const eventsResponse = await fetch(
-          `https://cloud.umami.is/api/share/UAh3uDLWxgTu2Sva/events?startAt=${startAt}&endAt=${endAt}`,
-          {
-            headers: { Accept: "application/json" },
-            cache: 'no-store', // Prevent caching
-          }
-        );
-
-        let videoDownloads = 0;
-        let audioDownloads = 0;
-
-        if (eventsResponse.ok) {
-          const eventsData = await eventsResponse.json();
-          console.log("[Footer] Events API response:", eventsData);
-          
-          // Events can be in different formats
-          if (Array.isArray(eventsData)) {
-            // Find events by exact name match
-            const videoEvent = eventsData.find((e: any) => 
-              e.name === 'Download Video' || 
-              e.event === 'Download Video' ||
-              e.eventName === 'Download Video'
-            );
-            const audioEvent = eventsData.find((e: any) => 
-              e.name === 'Download Audio' || 
-              e.event === 'Download Audio' ||
-              e.eventName === 'Download Audio'
-            );
-            
-            videoDownloads = videoEvent?.value || videoEvent?.count || videoEvent?.total || videoEvent?.y || 0;
-            audioDownloads = audioEvent?.value || audioEvent?.count || audioEvent?.total || audioEvent?.y || 0;
-            
-            console.log("[Footer] Found events:", { videoEvent, audioEvent });
-          } else if (eventsData.events && Array.isArray(eventsData.events)) {
-            // Events nested in events array
-            const videoEvent = eventsData.events.find((e: any) => 
-              e.name === 'Download Video' || 
-              e.event === 'Download Video' ||
-              e.eventName === 'Download Video'
-            );
-            const audioEvent = eventsData.events.find((e: any) => 
-              e.name === 'Download Audio' || 
-              e.event === 'Download Audio' ||
-              e.eventName === 'Download Audio'
-            );
-            
-            videoDownloads = videoEvent?.value || videoEvent?.count || videoEvent?.total || videoEvent?.y || 0;
-            audioDownloads = audioEvent?.value || audioEvent?.count || audioEvent?.total || audioEvent?.y || 0;
-          } else if (typeof eventsData === 'object') {
-            // Events as object with event names as keys
-            videoDownloads = eventsData['Download Video']?.value || eventsData['Download Video']?.count || eventsData['Download Video'] || 0;
-            audioDownloads = eventsData['Download Audio']?.value || eventsData['Download Audio']?.count || eventsData['Download Audio'] || 0;
-          }
-          
-          console.log("[Footer] Final parsed stats:", { videoDownloads, audioDownloads });
-          
-          setDownloadStats({
-            video: typeof videoDownloads === 'number' ? videoDownloads : 0,
-            audio: typeof audioDownloads === 'number' ? audioDownloads : 0,
-          });
-        } else {
-          console.error("[Footer] Events API response not OK:", eventsResponse.status, eventsResponse.statusText);
-        }
-      } catch (error) {
-        console.error("Failed to fetch download stats:", error);
-      }
-    };
-
-    fetchDownloadStats();
-    // Refresh every 5 minutes
-    const interval = setInterval(fetchDownloadStats, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <footer className="mt-8 sm:mt-12 md:mt-20 border-t-2 border-[#fb923c]/30 bg-gradient-to-b from-transparent to-[#1a1a1a] animate-fadeIn" style={{ animationDelay: '0.4s' }}>
@@ -98,9 +13,6 @@ export default function Footer() {
             <div className="flex items-center gap-3">
               <span className="text-xl sm:text-2xl font-bold gradient-text">Grablink</span>
             </div>
-            <p className="text-xs sm:text-sm text-[#fb923c]/80 font-medium leading-relaxed max-w-xs">
-              Your gateway to seamless video downloads. Fast, reliable, and always accessible—download videos from your favorite platforms instantly.
-            </p>
             <p className="text-xs text-[#fb923c]/60 mt-2">
               © {currentYear} Grablink. All rights reserved.
             </p>
@@ -132,29 +44,6 @@ export default function Footer() {
                   About
                 </a>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Download Stats Section */}
-        <div className="pt-6 sm:pt-8 border-t border-zinc-200/40 dark:border-zinc-700/40 mb-6 sm:mb-8">
-          <p className="text-xs text-center text-[#fb923c]/80 uppercase tracking-wider mb-4 sm:mb-6 font-semibold">
-            Download Statistics
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 md:gap-8">
-            <div className="flex items-center gap-2 text-sm text-[#fb923c]/80">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              <span className="font-bold text-[#fb923c]">{(downloadStats?.video || 0).toLocaleString()}</span>
-              <span>Video Downloads</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-[#fb923c]/80">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-              </svg>
-              <span className="font-bold text-[#fb923c]">{(downloadStats?.audio || 0).toLocaleString()}</span>
-              <span>Audio Downloads</span>
             </div>
           </div>
         </div>

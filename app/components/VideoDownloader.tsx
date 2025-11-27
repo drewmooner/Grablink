@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import type { VideoDownloadResponse, VideoInfoResponse, HistoryResponse } from "@/lib/types";
 import Footer from "./Footer";
-import StatsCounter from "./StatsCounter";
 
 interface DownloadResult {
   success: boolean;
@@ -233,17 +232,6 @@ export default function VideoDownloader() {
     link.click();
     document.body.removeChild(link);
     
-    // Track successful download with Umami
-    try {
-      if (typeof window !== 'undefined') {
-        const umami = (window as any).umami;
-        if (typeof umami === 'function') {
-          umami('Download');
-        }
-      }
-    } catch (error) {
-      console.error('Umami tracking error:', error);
-    }
   };
 
   const triggerDownloadWithProgress = async (
@@ -319,17 +307,6 @@ export default function VideoDownloader() {
 
       setDownloadProgress(100);
       
-      // Track successful download with Umami
-      try {
-        if (typeof window !== 'undefined') {
-          const umami = (window as any).umami;
-          if (typeof umami === 'function') {
-            umami('Download');
-          }
-        }
-      } catch (error) {
-        console.error('Umami tracking error:', error);
-      }
       
       // Reset progress after a short delay
       setTimeout(() => {
@@ -590,12 +567,9 @@ export default function VideoDownloader() {
           }}>
             Grablink
           </h1>
-          <p className="text-sm xs:text-base sm:text-lg text-white/80 font-medium tracking-tight animate-fadeIn px-2 mb-3" style={{ animationDelay: '0.1s' }}>
+          <p className="text-sm xs:text-base sm:text-lg text-white/80 font-medium tracking-tight animate-fadeIn px-2" style={{ animationDelay: '0.1s' }}>
             Save access; always on
           </p>
-          <div className="flex justify-center animate-fadeIn" style={{ animationDelay: '0.2s' }}>
-            <StatsCounter />
-          </div>
         </div>
 
         {/* Main Download Card */}
