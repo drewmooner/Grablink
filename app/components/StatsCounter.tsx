@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import DownloadCounter from "./DownloadCounter";
 
 interface UmamiStats {
   pageviews: { value: number };
@@ -178,7 +179,7 @@ export default function StatsCounter() {
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
         </svg>
-        <span className="font-semibold">{formatNumber(totalDownloads)}</span>
+        <span className="font-semibold"><DownloadCounter /></span>
         <span className="text-[#fb923c]/60">downloads</span>
         <span className="text-[#fb923c]/40 text-xs">(no ads)</span>
       </div>

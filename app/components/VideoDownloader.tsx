@@ -233,16 +233,12 @@ export default function VideoDownloader() {
     link.click();
     document.body.removeChild(link);
     
-    // Track successful download with Umami - separate events for video and audio
+    // Track successful download with Umami
     try {
       if (typeof window !== 'undefined') {
         const umami = (window as any).umami;
         if (typeof umami === 'function') {
-          if (audioOnly) {
-            umami('Download Audio');
-          } else {
-            umami('Download Video');
-          }
+          umami('Download');
         }
       }
     } catch (error) {
@@ -323,16 +319,12 @@ export default function VideoDownloader() {
 
       setDownloadProgress(100);
       
-      // Track successful download with Umami - separate events for video and audio
+      // Track successful download with Umami
       try {
         if (typeof window !== 'undefined') {
           const umami = (window as any).umami;
           if (typeof umami === 'function') {
-            if (audioOnly) {
-              umami('Download Audio');
-            } else {
-              umami('Download Video');
-            }
+            umami('Download');
           }
         }
       } catch (error) {
