@@ -27,6 +27,7 @@ export default function VideoDownloader() {
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
   const [isDownloading, setIsDownloading] = useState(false);
   const [showNoHistoryMessage, setShowNoHistoryMessage] = useState(false);
+  const [autoDownloadAttempted, setAutoDownloadAttempted] = useState(false);
   const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load history on mount
@@ -205,6 +206,9 @@ export default function VideoDownloader() {
           ? downloadData.download.url
           : `https://resplendent-passion-production.up.railway.app${downloadData.download.url}`;
         
+        // Mark that we attempted automatic download
+        setAutoDownloadAttempted(true);
+        
         // Start download immediately - no delay
         triggerDownloadWithProgress(
           streamUrl,
@@ -324,6 +328,10 @@ export default function VideoDownloader() {
       setTimeout(() => {
         setIsDownloading(false);
         setDownloadProgress(0);
+        // Reset auto download flag after a delay so manual download button can appear if needed
+        setTimeout(() => {
+          setAutoDownloadAttempted(false);
+        }, 5000); // Hide manual download button after 5 seconds
       }, 1000);
     } catch (error) {
       console.error("Download error:", error);
@@ -869,9 +877,10 @@ export default function VideoDownloader() {
                 </div>
               )}
               
-              {result.downloadUrl && !isDownloading && (
+              {result.downloadUrl && !isDownloading && !autoDownloadAttempted && (
                 <button
                   onClick={() => {
+                    setAutoDownloadAttempted(true);
                     if (result.fileSize) {
                       triggerDownloadWithProgress(
                         result.downloadUrl!,
