@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { VideoDownloadResponse, VideoInfoResponse, HistoryResponse } from "@/lib/types";
 import Footer from "./Footer";
+import StatsCounter from "./StatsCounter";
 
 interface DownloadResult {
   success: boolean;
@@ -226,6 +227,15 @@ export default function VideoDownloader() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    
+    // Track successful download with Umami - separate events for video and audio
+    if (typeof window !== 'undefined' && (window as any).umami) {
+      if (audioOnly) {
+        (window as any).umami('Download Audio');
+      } else {
+        (window as any).umami('Download Video');
+      }
+    }
   };
 
   const triggerDownloadWithProgress = async (
@@ -300,6 +310,15 @@ export default function VideoDownloader() {
       window.URL.revokeObjectURL(url);
 
       setDownloadProgress(100);
+      
+      // Track successful download with Umami - separate events for video and audio
+      if (typeof window !== 'undefined' && (window as any).umami) {
+        if (audioOnly) {
+          (window as any).umami('Download Audio');
+        } else {
+          (window as any).umami('Download Video');
+        }
+      }
       
       // Reset progress after a short delay
       setTimeout(() => {
@@ -558,9 +577,12 @@ export default function VideoDownloader() {
           }}>
             Grablink
           </h1>
-          <p className="text-sm xs:text-base sm:text-lg text-white/80 font-medium tracking-tight animate-fadeIn px-2" style={{ animationDelay: '0.1s' }}>
+          <p className="text-sm xs:text-base sm:text-lg text-white/80 font-medium tracking-tight animate-fadeIn px-2 mb-3" style={{ animationDelay: '0.1s' }}>
             Save access; always on
           </p>
+          <div className="flex justify-center animate-fadeIn" style={{ animationDelay: '0.2s' }}>
+            <StatsCounter />
+          </div>
         </div>
 
         {/* Main Download Card */}

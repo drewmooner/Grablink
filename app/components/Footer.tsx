@@ -1,7 +1,40 @@
 "use client";
 
+import { useState, useEffect } from "react";
+
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const [downloadStats, setDownloadStats] = useState<{ video: number; audio: number } | null>(null);
+
+  useEffect(() => {
+    const fetchDownloadStats = async () => {
+      try {
+        const response = await fetch(
+          "https://cloud.umami.is/api/share/UAh3uDLWxgTu2Sva/stats",
+          {
+            headers: { Accept: "application/json" },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          const videoDownloads = data.eventData?.['Download Video']?.value || 0;
+          const audioDownloads = data.eventData?.['Download Audio']?.value || 0;
+          setDownloadStats({
+            video: typeof videoDownloads === 'number' ? videoDownloads : 0,
+            audio: typeof audioDownloads === 'number' ? audioDownloads : 0,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch download stats:", error);
+      }
+    };
+
+    fetchDownloadStats();
+    // Refresh every 5 minutes
+    const interval = setInterval(fetchDownloadStats, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <footer className="mt-8 sm:mt-12 md:mt-20 border-t-2 border-[#fb923c]/30 bg-gradient-to-b from-transparent to-[#1a1a1a] animate-fadeIn" style={{ animationDelay: '0.4s' }}>
@@ -47,6 +80,29 @@ export default function Footer() {
                   About
                 </a>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Download Stats Section */}
+        <div className="pt-6 sm:pt-8 border-t border-zinc-200/40 dark:border-zinc-700/40 mb-6 sm:mb-8">
+          <p className="text-xs text-center text-[#fb923c]/80 uppercase tracking-wider mb-4 sm:mb-6 font-semibold">
+            Download Statistics
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 md:gap-8">
+            <div className="flex items-center gap-2 text-sm text-[#fb923c]/80">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              <span className="font-bold text-[#fb923c]">{(downloadStats?.video || 0).toLocaleString()}</span>
+              <span>Video Downloads</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-[#fb923c]/80">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+              </svg>
+              <span className="font-bold text-[#fb923c]">{(downloadStats?.audio || 0).toLocaleString()}</span>
+              <span>Audio Downloads</span>
             </div>
           </div>
         </div>

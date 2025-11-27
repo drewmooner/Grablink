@@ -1,0 +1,162 @@
+"use client";
+
+import { useState, useEffect } from "react";
+
+interface UmamiStats {
+  pageviews: { value: number };
+  events: { value: number };
+  eventData?: {
+    'Download Video'?: { value: number };
+    'Download Audio'?: { value: number };
+  };
+}
+
+export default function StatsCounter() {
+  const [stats, setStats] = useState<{ visits: number; videoDownloads: number; audioDownloads: number } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        // Fetch from Umami share API
+        // Using the public share endpoint which returns aggregated stats
+        const response = await fetch(
+          "https://cloud.umami.is/api/share/UAh3uDLWxgTu2Sva/stats",
+          {
+            headers: {
+              Accept: "application/json",
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          // Umami share API returns different structure, extract pageviews and events
+          const pageviews = data.pageviews?.value || data.pageviews || 0;
+          
+          // Try to get event breakdown from eventData or events
+          let videoDownloads = 0;
+          let audioDownloads = 0;
+          
+          // Check if we have event data breakdown
+          if (data.eventData) {
+            videoDownloads = data.eventData['Download Video']?.value || 0;
+            audioDownloads = data.eventData['Download Audio']?.value || 0;
+          } else if (data.events) {
+            // If no breakdown, try to get from events array or object
+            const totalEvents = typeof data.events === 'number' ? data.events : (data.events?.value || 0);
+            // If we can't get breakdown, we'll show total as video (legacy)
+            videoDownloads = totalEvents;
+          }
+          
+          setStats({
+            visits: typeof pageviews === 'number' ? pageviews : 0,
+            videoDownloads,
+            audioDownloads,
+          });
+        } else {
+          // If API fails, try alternative endpoint format
+          const altResponse = await fetch(
+            `https://cloud.umami.is/api/websites/5d7c0418-ad3d-43b6-be7e-b3ff326e86b7/stats?shareCode=UAh3uDLWxgTu2Sva`,
+            {
+              headers: {
+                Accept: "application/json",
+              },
+            }
+          );
+          
+          if (altResponse.ok) {
+            const altData = await altResponse.json();
+            const videoDownloads = altData.eventData?.['Download Video']?.value || 0;
+            const audioDownloads = altData.eventData?.['Download Audio']?.value || 0;
+            
+            setStats({
+              visits: altData.pageviews?.value || 0,
+              videoDownloads,
+              audioDownloads,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch stats:", error);
+        // Set fallback values on error
+        setStats({ visits: 0, videoDownloads: 0, audioDownloads: 0 });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+    // Refresh stats every 5 minutes
+    const interval = setInterval(fetchStats, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) {
+      return `${(num / 1000000).toFixed(1)}M+`;
+    } else if (num >= 1000) {
+      return `${(num / 1000).toFixed(1)}K+`;
+    }
+    return `${num}+`;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-4 text-sm text-[#fb923c]/80">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 border-2 border-[#fb923c]/40 border-t-[#fb923c] rounded-full animate-spin"></div>
+          <span>Loading stats...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Always show stats, even if 0, so users know the feature is working
+  if (!stats) {
+    return (
+      <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm text-[#fb923c]/80">
+        <div className="flex items-center gap-2">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          <span className="font-semibold">0+</span>
+          <span className="text-[#fb923c]/60">visits</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          <span className="font-semibold">0+</span>
+          <span className="text-[#fb923c]/60">downloads</span>
+          <span className="text-[#fb923c]/40 text-xs">(no ads)</span>
+        </div>
+      </div>
+    );
+  }
+
+  const totalDownloads = stats.videoDownloads + stats.audioDownloads;
+
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs sm:text-sm text-[#fb923c]/80">
+      <div className="flex items-center gap-2">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+        <span className="font-semibold">{formatNumber(stats.visits)}</span>
+        <span className="text-[#fb923c]/60">visits</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        <span className="font-semibold">{formatNumber(totalDownloads)}</span>
+        <span className="text-[#fb923c]/60">downloads</span>
+        <span className="text-[#fb923c]/40 text-xs">(no ads)</span>
+      </div>
+    </div>
+  );
+}
+
