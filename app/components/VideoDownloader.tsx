@@ -75,20 +75,11 @@ export default function VideoDownloader() {
 
     // If URL is valid, scan it after a short delay (debounce)
     if (url.trim() && isValidUrl(url.trim())) {
-      // Check for TikTok URLs early and show friendly message
-      const urlLower = url.trim().toLowerCase();
-      if (urlLower.includes("tiktok.com") || urlLower.includes("vm.tiktok.com") || urlLower.includes("vt.tiktok.com")) {
-        setError("TikTok is currently not supported. We're working on adding support for other platforms. Please try Instagram, YouTube, Twitter, or other supported platforms.");
-        setVideoInfo(null);
-        setScanning(false);
-        return;
-      }
-
       // Show spinner immediately when URL is detected
       setScanning(true);
       scanTimeoutRef.current = setTimeout(async () => {
         try {
-          const response = await fetch("https://resplendent-passion-production.up.railway.app/api/video/info", {
+          const response = await fetch("/api/video/info", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ url: url.trim() }),
@@ -139,7 +130,7 @@ export default function VideoDownloader() {
   const loadHistory = async () => {
     try {
       // Fetch history from Railway backend (where downloads are tracked)
-      const response = await fetch("https://resplendent-passion-production.up.railway.app/api/video/history");
+      const response = await fetch("/api/video/history");
       const data: HistoryResponse = await response.json();
       if (data.success) {
         setHistory(data);
@@ -171,7 +162,7 @@ export default function VideoDownloader() {
 
     try {
       // Download (video info already scanned)
-      const downloadResponse = await fetch("https://resplendent-passion-production.up.railway.app/api/video/download", {
+      const downloadResponse = await fetch("/api/video/download", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -203,7 +194,7 @@ export default function VideoDownloader() {
         // Convert relative URL to full Railway URL
         const streamUrl = downloadData.download.url.startsWith('http')
           ? downloadData.download.url
-          : `https://resplendent-passion-production.up.railway.app${downloadData.download.url}`;
+          : downloadData.download.url;
         
         // Mark that we attempted automatic download BEFORE triggering
         setAutoDownloadAttempted(true);
@@ -345,7 +336,7 @@ export default function VideoDownloader() {
   const deleteHistoryEntry = async (id: string) => {
     try {
       // Delete from Railway backend
-      await fetch(`https://resplendent-passion-production.up.railway.app/api/video/history?id=${id}`, { method: "DELETE" });
+      await fetch(`/api/video/history?id=${id}`, { method: "DELETE" });
       loadHistory();
     } catch (error) {
       console.error("Failed to delete history entry:", error);
@@ -355,7 +346,7 @@ export default function VideoDownloader() {
   const clearHistory = async () => {
     try {
       // Clear from Railway backend
-      await fetch("https://resplendent-passion-production.up.railway.app/api/video/history", {
+      await fetch("/api/video/history", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "clear" }),
@@ -782,7 +773,7 @@ export default function VideoDownloader() {
                       setVideoInfo(null);
                       setScanning(true);
                       try {
-                        const response = await fetch("https://resplendent-passion-production.up.railway.app/api/video/info", {
+                        const response = await fetch("/api/video/info", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ url: url.trim() }),

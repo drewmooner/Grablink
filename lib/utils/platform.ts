@@ -6,11 +6,18 @@ import type { Platform } from "@/lib/types";
  * Detect platform from URL
  */
 export function detectPlatform(url: string): Platform {
-  const urlLower = url.toLowerCase();
+  const urlLower = url.toLowerCase().trim();
 
-  // Explicitly detect and reject TikTok URLs early
-  if (urlLower.includes("tiktok.com") || urlLower.includes("vm.tiktok.com") || urlLower.includes("vt.tiktok.com")) {
-    return "unknown"; // Return unknown so it's caught by platform check
+  // TikTok detection - check for all TikTok URL patterns
+  if (
+    urlLower.includes("tiktok.com") || 
+    urlLower.includes("vm.tiktok.com") || 
+    urlLower.includes("vt.tiktok.com") ||
+    urlLower.includes("tiktok.com/") ||
+    urlLower.startsWith("tiktok://")
+  ) {
+    console.log("[detectPlatform] TikTok detected:", url);
+    return "tiktok";
   }
 
   if (urlLower.includes("instagram.com") || urlLower.includes("instagr.am")) {
@@ -50,6 +57,7 @@ export function detectPlatform(url: string): Platform {
  */
 export function isPlatformSupported(platform: Platform): boolean {
   const supportedPlatforms: Platform[] = [
+    "tiktok",
     "instagram",
     "youtube",
     "twitter",
@@ -67,6 +75,7 @@ export function isPlatformSupported(platform: Platform): boolean {
  */
 export function getPlatformName(platform: Platform): string {
   const names: Record<Platform, string> = {
+    tiktok: "TikTok",
     instagram: "Instagram",
     youtube: "YouTube",
     twitter: "Twitter/X",

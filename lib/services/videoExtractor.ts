@@ -21,6 +21,43 @@ const execAsync = promisify(exec);
 // Temporary directory for downloads
 const TEMP_DIR = path.join(os.tmpdir(), "grablink-downloads");
 
+// Sleep helper for retries
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Retry helper for TikTok with exponential backoff
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  initialDelay: number = 2000,
+  isTikTok: boolean = false
+): Promise<T> {
+  let lastError: any;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      // Add random sleep before TikTok requests to avoid rate limiting
+      if (isTikTok && attempt > 0) {
+        const delay = initialDelay * Math.pow(2, attempt - 1) + Math.random() * 1000;
+        console.log(`[retryWithBackoff] TikTok retry ${attempt + 1}/${maxRetries}, waiting ${Math.round(delay)}ms`);
+        await sleep(delay);
+      }
+      
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      console.log(`[retryWithBackoff] Attempt ${attempt + 1}/${maxRetries} failed:`, error instanceof Error ? error.message : error);
+      
+      if (attempt === maxRetries - 1) {
+        throw lastError;
+      }
+    }
+  }
+  
+  throw lastError;
+}
+
 // Ensure temp directory exists
 async function ensureTempDir(): Promise<void> {
   try {
@@ -39,27 +76,9 @@ async function ensureTempDir(): Promise<void> {
  * Get video info using yt-dlp
  */
 export async function getVideoInfo(url: string): Promise<VideoInfoResponse> {
-  // Check for TikTok URLs early and return friendly error
-  const urlLower = url.toLowerCase();
-  if (urlLower.includes("tiktok.com") || urlLower.includes("vm.tiktok.com") || urlLower.includes("vt.tiktok.com")) {
-    return {
-      success: false,
-      platform: "unknown",
-      url,
-      qualities: [],
-      downloadOptions: {
-        recommendedMethod: "proxy",
-        supportsDirect: false,
-        supportsStreaming: true,
-      },
-      error: {
-        code: "PLATFORM_NOT_SUPPORTED",
-        message: "TikTok is currently not supported. We're working on adding support for other platforms. Please try Instagram, YouTube, Twitter, or other supported platforms.",
-      },
-    };
-  }
-
   const platform = detectPlatform(url);
+  console.log("[getVideoInfo] Detected platform:", platform, "URL:", url);
+  console.log("[getVideoInfo] Is platform supported:", isPlatformSupported(platform));
 
   if (!isPlatformSupported(platform)) {
     return {
@@ -74,7 +93,7 @@ export async function getVideoInfo(url: string): Promise<VideoInfoResponse> {
       },
       error: {
         code: "PLATFORM_NOT_SUPPORTED",
-        message: `Platform "${platform}" is not supported. Supported platforms: Instagram, YouTube, Twitter, Facebook, Pinterest, Vimeo, Twitch, and Reddit.`,
+        message: `Platform "${platform}" is not supported. Supported platforms: TikTok, Instagram, YouTube, Twitter, Facebook, Pinterest, Vimeo, Twitch, and Reddit.`,
       },
     };
   }
@@ -98,7 +117,8 @@ export async function getVideoInfo(url: string): Promise<VideoInfoResponse> {
 
     // Get the yt-dlp command to use (getYtDlpCommand() already tests all available methods)
     const ytDlpCmd = await getYtDlpCommand();
-    console.log("[getVideoInfo] Detected yt-dlp command:", ytDlpCmd);
+    const isTikTok = platform === "tiktok";
+    console.log("[getVideoInfo] Detected yt-dlp command:", ytDlpCmd, "isTikTok:", isTikTok);
     
     // If the default is still "yt-dlp" and it's not working, it means yt-dlp isn't installed
     // But getYtDlpCommand() should have tried python3 -m yt_dlp first, so if we get here
@@ -117,11 +137,19 @@ export async function getVideoInfo(url: string): Promise<VideoInfoResponse> {
     let stderr: string = "";
     let execError: any = null;
     
-    try {
+    // For TikTok, use retry logic with backoff
+    const executeCommand = async () => {
       const result = await execAsync(command, {
-        timeout: 120000, // 2 minutes timeout
+        timeout: isTikTok ? 180000 : 120000, // 3 minutes for TikTok, 2 for others
         maxBuffer: 10 * 1024 * 1024, // 10MB buffer
       });
+      return result;
+    };
+    
+    try {
+      const result = isTikTok
+        ? await retryWithBackoff(executeCommand, 3, 2000, true)
+        : await executeCommand();
       stdout = result.stdout;
       stderr = result.stderr || "";
       console.log("[getVideoInfo] Command executed successfully, stdout length:", stdout.length);
@@ -450,21 +478,13 @@ export async function downloadVideo(
   outputPath?: string,
   downloadId?: string
 ): Promise<{ filePath: string; metadata: any }> {
-  // Check for TikTok URLs early and return friendly error
-  const urlLower = url.toLowerCase();
-  if (urlLower.includes("tiktok.com") || urlLower.includes("vm.tiktok.com") || urlLower.includes("vt.tiktok.com")) {
-    throw new ExtractionError(
-      "TikTok is currently not supported. We're working on adding support for other platforms. Please try Instagram, YouTube, Twitter, or other supported platforms.",
-      "PLATFORM_NOT_SUPPORTED",
-      { platform: "unknown", url }
-    );
-  }
-
-  // Validate platform before downloading
   const platform = detectPlatform(url);
+  console.log("[downloadVideo] Detected platform:", platform, "URL:", url);
+  console.log("[downloadVideo] Is platform supported:", isPlatformSupported(platform));
+  
   if (!isPlatformSupported(platform)) {
     throw new ExtractionError(
-      `Platform "${platform}" is not supported. Supported platforms: Instagram, YouTube, Twitter, Facebook, Pinterest, Vimeo, Twitch, and Reddit.`,
+      `Platform "${platform}" is not supported. Supported platforms: TikTok, Instagram, YouTube, Twitter, Facebook, Pinterest, Vimeo, Twitch, and Reddit.`,
       "PLATFORM_NOT_SUPPORTED",
       { platform, url }
     );
@@ -528,6 +548,8 @@ export async function downloadVideo(
     );
   }
 
+  const isTikTok = platform === "tiktok";
+
   // Download video in best available quality
   // Removed 720p limit to ensure all videos download regardless of size
   // Format includes /best fallback for maximum compatibility
@@ -541,11 +563,19 @@ export async function downloadVideo(
   let stdout: string;
   let stderr: string;
 
-  try {
+  // For TikTok, use retry logic with backoff
+  const executeCommand = async () => {
     const result = await execAsync(command, {
-      timeout: 900000, // 15 minutes timeout (increased for larger files)
-      maxBuffer: 100 * 1024 * 1024, // 100MB buffer (increased for verbose output)
+      timeout: isTikTok ? 900000 : 900000, // 15 minutes timeout
+      maxBuffer: 100 * 1024 * 1024, // 100MB buffer
     });
+    return result;
+  };
+
+  try {
+    const result = isTikTok
+      ? await retryWithBackoff(executeCommand, 3, 3000, true)
+      : await executeCommand();
     stdout = result.stdout;
     stderr = result.stderr || "";
     console.log("[downloadVideo] Command executed successfully, stdout length:", stdout.length);

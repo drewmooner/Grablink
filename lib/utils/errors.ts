@@ -17,11 +17,23 @@ export class ExtractionError extends Error {
 export function parseYtDlpError(error: string): { code: string; message: string } {
   const errorLower = error.toLowerCase();
 
-  // Gracefully handle any TikTok-related errors from yt-dlp
-  if (errorLower.includes("tiktok")) {
+  // Handle TikTok-specific errors with friendly messages
+  if (errorLower.includes("tiktok") || errorLower.includes("unable to extract webpage") || errorLower.includes("video not available")) {
+    if (errorLower.includes("rate limit") || errorLower.includes("too many requests") || errorLower.includes("429")) {
+      return {
+        code: "TIKTOK_RATE_LIMIT",
+        message: "TikTok is being tricky right now. Please try again in a minute.",
+      };
+    }
+    if (errorLower.includes("private") || errorLower.includes("not available")) {
+      return {
+        code: "TIKTOK_PRIVATE",
+        message: "This TikTok video is private or not available.",
+      };
+    }
     return {
-      code: "PLATFORM_NOT_SUPPORTED",
-      message: "TikTok is currently not supported. We're working on adding support for other platforms. Please try Instagram, YouTube, Twitter, or other supported platforms.",
+      code: "TIKTOK_ERROR",
+      message: "TikTok is being tricky, try again in a minute.",
     };
   }
 

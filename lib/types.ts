@@ -36,7 +36,7 @@ export interface ExtractRequest {
 }
 
 // Video download types
-export type Platform = "instagram" | "youtube" | "twitter" | "facebook" | "pinterest" | "vimeo" | "twitch" | "reddit" | "unknown";
+export type Platform = "tiktok" | "instagram" | "youtube" | "twitter" | "facebook" | "pinterest" | "vimeo" | "twitch" | "reddit" | "unknown";
 
 export interface VideoQuality {
   quality: string;

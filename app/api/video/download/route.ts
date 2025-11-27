@@ -79,22 +79,6 @@ async function handleDownload(request: NextRequest) {
       );
     }
 
-    // Check for TikTok URLs early and return friendly error
-    const urlLower = url.toLowerCase();
-    if (urlLower.includes("tiktok.com") || urlLower.includes("vm.tiktok.com") || urlLower.includes("vt.tiktok.com")) {
-      return NextResponse.json<VideoDownloadResponse>(
-        {
-          success: false,
-          platform: "unknown",
-          error: {
-            code: "PLATFORM_NOT_SUPPORTED",
-            message: "TikTok is currently not supported. We're working on adding support for other platforms. Please try Instagram, YouTube, Twitter, or other supported platforms.",
-          },
-        },
-        { status: 400, headers: corsHeaders }
-      );
-    }
-
     const platform = detectPlatform(url);
 
     try {

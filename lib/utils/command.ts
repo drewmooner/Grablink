@@ -11,45 +11,78 @@ const execAsync = promisify(exec);
 let ytDlpCommand: string | null = null;
 
 /**
- * Get the yt-dlp command to use (tries yt-dlp first, then python3 -m yt_dlp)
+ * Get the yt-dlp command to use (tries yt-dlp first, then python/python3 -m yt_dlp)
  */
 export async function getYtDlpCommand(): Promise<string> {
   if (ytDlpCommand) {
     return ytDlpCommand;
   }
 
-  // Try python3 -m yt_dlp first (most reliable since we install via pip)
-  try {
-    await execAsync("python3 -m yt_dlp --version", { timeout: 5000 });
-    ytDlpCommand = "python3 -m yt_dlp";
-    console.log("[getYtDlpCommand] Using python3 -m yt_dlp");
-    return ytDlpCommand;
-  } catch (error: any) {
-    console.log("[getYtDlpCommand] python3 -m yt_dlp not available, trying alternatives");
+  const isWindows = os.platform() === "win32";
+
+  // On Windows, try python first (not python3)
+  // On Unix, try python3 first
+  if (isWindows) {
+    // Try python -m yt_dlp first on Windows
+    try {
+      await execAsync("python -m yt_dlp --version", { timeout: 5000 });
+      ytDlpCommand = "python -m yt_dlp";
+      console.log("[getYtDlpCommand] Using python -m yt_dlp (Windows)");
+      return ytDlpCommand;
+    } catch (error: any) {
+      console.log("[getYtDlpCommand] python -m yt_dlp not available on Windows, trying alternatives");
+    }
+  } else {
+    // Try python3 -m yt_dlp first on Unix (most reliable since we install via pip)
+    try {
+      await execAsync("python3 -m yt_dlp --version", { timeout: 5000 });
+      ytDlpCommand = "python3 -m yt_dlp";
+      console.log("[getYtDlpCommand] Using python3 -m yt_dlp");
+      return ytDlpCommand;
+    } catch (error: any) {
+      console.log("[getYtDlpCommand] python3 -m yt_dlp not available, trying alternatives");
+    }
   }
 
-  // Try yt-dlp command
+  // Try yt-dlp command (works on both platforms if installed globally)
   try {
     await execAsync("yt-dlp --version", { timeout: 5000 });
     ytDlpCommand = "yt-dlp";
     console.log("[getYtDlpCommand] Using yt-dlp command");
     return ytDlpCommand;
   } catch (error: any) {
-    console.log("[getYtDlpCommand] yt-dlp command not available, trying python");
+    console.log("[getYtDlpCommand] yt-dlp command not available, trying python alternatives");
   }
 
-  // Try python -m yt_dlp (without 3)
-  try {
-    await execAsync("python -m yt_dlp --version", { timeout: 5000 });
+  // Try the other python command (python3 on Windows, python on Unix)
+  if (isWindows) {
+    try {
+      await execAsync("python3 -m yt_dlp --version", { timeout: 5000 });
+      ytDlpCommand = "python3 -m yt_dlp";
+      console.log("[getYtDlpCommand] Using python3 -m yt_dlp (Windows fallback)");
+      return ytDlpCommand;
+    } catch (error: any) {
+      console.log("[getYtDlpCommand] python3 -m yt_dlp not available on Windows");
+    }
+  } else {
+    try {
+      await execAsync("python -m yt_dlp --version", { timeout: 5000 });
+      ytDlpCommand = "python -m yt_dlp";
+      console.log("[getYtDlpCommand] Using python -m yt_dlp (Unix fallback)");
+      return ytDlpCommand;
+    } catch (error: any) {
+      console.log("[getYtDlpCommand] python -m yt_dlp not available on Unix");
+    }
+  }
+
+  // Default based on platform
+  if (isWindows) {
+    console.log("[getYtDlpCommand] All methods failed, defaulting to python -m yt_dlp (Windows)");
     ytDlpCommand = "python -m yt_dlp";
-    console.log("[getYtDlpCommand] Using python -m yt_dlp");
-    return ytDlpCommand;
-  } catch (error: any) {
-    console.log("[getYtDlpCommand] All methods failed, defaulting to python3 -m yt_dlp");
+  } else {
+    console.log("[getYtDlpCommand] All methods failed, defaulting to python3 -m yt_dlp (Unix)");
+    ytDlpCommand = "python3 -m yt_dlp";
   }
-
-  // Default to python3 -m yt_dlp since that's what we install via pip
-  ytDlpCommand = "python3 -m yt_dlp";
   return ytDlpCommand;
 }
 
@@ -106,20 +139,71 @@ export async function buildYtDlpCommand(
   const ytDlp = await getYtDlpCommand();
   const parts: string[] = ytDlp.split(" ");
 
-  // Gracefully skip TikTok URLs - they should be caught earlier, but just in case
   const urlLower = url.toLowerCase();
-  if (urlLower.includes("tiktok.com") || urlLower.includes("vm.tiktok.com") || urlLower.includes("vt.tiktok.com")) {
-    console.warn("[buildYtDlpCommand] TikTok URL detected - should have been caught earlier. Skipping TikTok-specific handling.");
-  }
+  const isTikTok = urlLower.includes("tiktok.com") || urlLower.includes("vm.tiktok.com") || urlLower.includes("vt.tiktok.com");
 
   // Standard options for all platforms
-  parts.push("--socket-timeout", "60"); // Increased from 30 to 60 seconds for larger files
-  parts.push("--retries", "5"); // Increased from 3 to 5 retries for better reliability
-  parts.push("--fragment-retries", "5"); // Increased from 3 to 5 retries
-  parts.push("--extractor-retries", "5"); // Increased from 3 to 5 retries
+  parts.push("--socket-timeout", "60");
+  parts.push("--retries", "5");
+  parts.push("--fragment-retries", "5");
+  parts.push("--extractor-retries", "5");
   parts.push("--no-check-certificate");
-  // Add options for better compatibility with different platforms
-  parts.push("--no-warnings"); // Reduce noise in output but keep important messages
+  
+  // TikTok-specific options (2025 best practices)
+  if (isTikTok) {
+    // Browser impersonation - use Chrome user agent
+    const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+    if (os.platform() === "win32") {
+      parts.push(`--user-agent "${userAgent}"`);
+    } else {
+      parts.push(`--user-agent '${userAgent.replace(/'/g, "'\\''")}'`);
+    }
+
+    // Referer and headers
+    parts.push("--referer", "https://www.tiktok.com/");
+    const acceptHeader = "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8";
+    const langHeader = "Accept-Language: en-US,en;q=0.9";
+    const secHeader = "Sec-Fetch-Dest: document";
+    const secModeHeader = "Sec-Fetch-Mode: navigate";
+    const secSiteHeader = "Sec-Fetch-Site: none";
+    const secUserHeader = "Sec-Fetch-User: ?1";
+    
+    if (os.platform() === "win32") {
+      parts.push(`--add-header "${acceptHeader}"`);
+      parts.push(`--add-header "${langHeader}"`);
+      parts.push(`--add-header "${secHeader}"`);
+      parts.push(`--add-header "${secModeHeader}"`);
+      parts.push(`--add-header "${secSiteHeader}"`);
+      parts.push(`--add-header "${secUserHeader}"`);
+    } else {
+      parts.push(`--add-header '${acceptHeader.replace(/'/g, "'\\''")}'`);
+      parts.push(`--add-header '${langHeader.replace(/'/g, "'\\''")}'`);
+      parts.push(`--add-header '${secHeader.replace(/'/g, "'\\''")}'`);
+      parts.push(`--add-header '${secModeHeader.replace(/'/g, "'\\''")}'`);
+      parts.push(`--add-header '${secSiteHeader.replace(/'/g, "'\\''")}'`);
+      parts.push(`--add-header '${secUserHeader.replace(/'/g, "'\\''")}'`);
+    }
+
+    // TikTok extractor args with device simulation
+    const deviceId = Math.floor(Math.random() * 1000000000000000).toString();
+    const installId = Math.floor(Math.random() * 1000000000000000000).toString().padStart(19, '0');
+    const extractorArgs = `webpage_download_timeout=90,device_id=${deviceId},app_info=${installId},verify_fp=`;
+    
+    if (os.platform() === "win32") {
+      parts.push(`--extractor-args "tiktok:${extractorArgs}"`);
+    } else {
+      parts.push(`--extractor-args 'tiktok:${extractorArgs.replace(/'/g, "'\\''")}'`);
+    }
+
+    // Additional TikTok-specific options
+    parts.push("--sleep-interval", "2"); // Sleep 2 seconds between requests
+    parts.push("--max-sleep-interval", "5"); // Random sleep up to 5 seconds
+    parts.push("--sleep-subtitles", "1"); // Sleep 1 second for subtitles
+    parts.push("--no-warnings"); // Reduce noise
+  } else {
+    // Non-TikTok platforms
+    parts.push("--no-warnings");
+  }
   
   // Speed optimizations - download fragments concurrently for faster downloads
   // Use equals sign format to ensure proper argument parsing
