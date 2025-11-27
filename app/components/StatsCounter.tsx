@@ -18,83 +18,93 @@ export default function StatsCounter() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Fetch from Umami share API
-        // Using the public share endpoint which returns aggregated stats
-        const response = await fetch(
+        // Fetch pageviews from stats endpoint
+        const statsResponse = await fetch(
           "https://cloud.umami.is/api/share/UAh3uDLWxgTu2Sva/stats",
           {
-            headers: {
-              Accept: "application/json",
-            },
+            headers: { Accept: "application/json" },
+            cache: 'no-store', // Prevent caching
           }
         );
 
-        if (response.ok) {
-          const data = await response.json();
-          console.log("[StatsCounter] Umami API response:", data);
-          
-          // Umami share API returns different structure, extract pageviews and events
-          const pageviews = data.pageviews?.value || data.pageviews || 0;
-          
-          // Try to get event breakdown from eventData or events
-          let videoDownloads = 0;
-          let audioDownloads = 0;
-          
-          // Check multiple possible data structures
-          if (data.eventData) {
-            // Try direct access
-            videoDownloads = data.eventData['Download Video']?.value || data.eventData['Download Video'] || 0;
-            audioDownloads = data.eventData['Download Audio']?.value || data.eventData['Download Audio'] || 0;
-          } else if (data.events) {
-            // Events might be an array or object
-            if (Array.isArray(data.events)) {
-              // Find events by name
-              const videoEvent = data.events.find((e: any) => e.name === 'Download Video' || e.event === 'Download Video');
-              const audioEvent = data.events.find((e: any) => e.name === 'Download Audio' || e.event === 'Download Audio');
-              videoDownloads = videoEvent?.value || videoEvent?.count || 0;
-              audioDownloads = audioEvent?.value || audioEvent?.count || 0;
-            } else if (typeof data.events === 'object') {
-              // Try accessing as object
-              videoDownloads = data.events['Download Video']?.value || data.events['Download Video'] || 0;
-              audioDownloads = data.events['Download Audio']?.value || data.events['Download Audio'] || 0;
-            }
+        let pageviews = 0;
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json();
+          console.log("[StatsCounter] Stats API response:", statsData);
+          pageviews = statsData.pageviews?.value || statsData.pageviews || statsData.totals?.views || 0;
+        }
+
+        // Fetch events separately with date range (last 365 days to get all events)
+        const now = Date.now();
+        const startAt = 0; // Start from beginning
+        const endAt = now;
+        
+        const eventsResponse = await fetch(
+          `https://cloud.umami.is/api/share/UAh3uDLWxgTu2Sva/events?startAt=${startAt}&endAt=${endAt}`,
+          {
+            headers: { Accept: "application/json" },
+            cache: 'no-store', // Prevent caching
           }
+        );
+
+        let videoDownloads = 0;
+        let audioDownloads = 0;
+
+        if (eventsResponse.ok) {
+          const eventsData = await eventsResponse.json();
+          console.log("[StatsCounter] Events API response:", eventsData);
           
-          console.log("[StatsCounter] Parsed stats:", { pageviews, videoDownloads, audioDownloads });
-          
-          // If we got pageviews but no event breakdown, try fetching events separately
-          if (pageviews > 0 && videoDownloads === 0 && audioDownloads === 0) {
-            try {
-              const eventsResponse = await fetch(
-                "https://cloud.umami.is/api/share/UAh3uDLWxgTu2Sva/events",
-                {
-                  headers: { Accept: "application/json" },
-                }
-              );
-              
-              if (eventsResponse.ok) {
-                const eventsData = await eventsResponse.json();
-                console.log("[StatsCounter] Events API response:", eventsData);
-                
-                if (Array.isArray(eventsData)) {
-                  const videoEvent = eventsData.find((e: any) => e.name === 'Download Video' || e.event === 'Download Video');
-                  const audioEvent = eventsData.find((e: any) => e.name === 'Download Audio' || e.event === 'Download Audio');
-                  videoDownloads = videoEvent?.value || videoEvent?.count || videoEvent?.total || 0;
-                  audioDownloads = audioEvent?.value || audioEvent?.count || audioEvent?.total || 0;
-                }
-              }
-            } catch (eventsError) {
-              console.error("[StatsCounter] Failed to fetch events separately:", eventsError);
-            }
+          // Events can be in different formats
+          if (Array.isArray(eventsData)) {
+            // Find events by exact name match
+            const videoEvent = eventsData.find((e: any) => 
+              e.name === 'Download Video' || 
+              e.event === 'Download Video' ||
+              e.eventName === 'Download Video'
+            );
+            const audioEvent = eventsData.find((e: any) => 
+              e.name === 'Download Audio' || 
+              e.event === 'Download Audio' ||
+              e.eventName === 'Download Audio'
+            );
+            
+            videoDownloads = videoEvent?.value || videoEvent?.count || videoEvent?.total || videoEvent?.y || 0;
+            audioDownloads = audioEvent?.value || audioEvent?.count || audioEvent?.total || audioEvent?.y || 0;
+            
+            console.log("[StatsCounter] Found events:", { videoEvent, audioEvent });
+          } else if (eventsData.events && Array.isArray(eventsData.events)) {
+            // Events nested in events array
+            const videoEvent = eventsData.events.find((e: any) => 
+              e.name === 'Download Video' || 
+              e.event === 'Download Video' ||
+              e.eventName === 'Download Video'
+            );
+            const audioEvent = eventsData.events.find((e: any) => 
+              e.name === 'Download Audio' || 
+              e.event === 'Download Audio' ||
+              e.eventName === 'Download Audio'
+            );
+            
+            videoDownloads = videoEvent?.value || videoEvent?.count || videoEvent?.total || videoEvent?.y || 0;
+            audioDownloads = audioEvent?.value || audioEvent?.count || audioEvent?.total || audioEvent?.y || 0;
+          } else if (typeof eventsData === 'object') {
+            // Events as object with event names as keys
+            videoDownloads = eventsData['Download Video']?.value || eventsData['Download Video']?.count || eventsData['Download Video'] || 0;
+            audioDownloads = eventsData['Download Audio']?.value || eventsData['Download Audio']?.count || eventsData['Download Audio'] || 0;
           }
-          
-          setStats({
-            visits: typeof pageviews === 'number' ? pageviews : 0,
-            videoDownloads,
-            audioDownloads,
-          });
         } else {
-          console.error("[StatsCounter] API response not OK:", response.status, response.statusText);
+          console.error("[StatsCounter] Events API response not OK:", eventsResponse.status, eventsResponse.statusText);
+        }
+        
+        console.log("[StatsCounter] Final parsed stats:", { pageviews, videoDownloads, audioDownloads });
+        
+        setStats({
+          visits: typeof pageviews === 'number' ? pageviews : 0,
+          videoDownloads,
+          audioDownloads,
+        });
+      } catch (error) {
+        console.error("[StatsCounter] Failed to fetch stats:", error);
           // If API fails, try alternative endpoint format
           const altResponse = await fetch(
             `https://cloud.umami.is/api/websites/5d7c0418-ad3d-43b6-be7e-b3ff326e86b7/stats?shareCode=UAh3uDLWxgTu2Sva`,

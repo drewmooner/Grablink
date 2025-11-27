@@ -9,44 +9,73 @@ export default function Footer() {
   useEffect(() => {
     const fetchDownloadStats = async () => {
       try {
-        const response = await fetch(
-          "https://cloud.umami.is/api/share/UAh3uDLWxgTu2Sva/stats",
+        // Fetch events with date range (last 365 days to get all events)
+        const now = Date.now();
+        const startAt = 0; // Start from beginning
+        const endAt = now;
+        
+        const eventsResponse = await fetch(
+          `https://cloud.umami.is/api/share/UAh3uDLWxgTu2Sva/events?startAt=${startAt}&endAt=${endAt}`,
           {
             headers: { Accept: "application/json" },
+            cache: 'no-store', // Prevent caching
           }
         );
 
-        if (response.ok) {
-          const data = await response.json();
-          console.log("[Footer] Umami API response:", data);
+        let videoDownloads = 0;
+        let audioDownloads = 0;
+
+        if (eventsResponse.ok) {
+          const eventsData = await eventsResponse.json();
+          console.log("[Footer] Events API response:", eventsData);
           
-          let videoDownloads = 0;
-          let audioDownloads = 0;
-          
-          // Try multiple possible data structures
-          if (data.eventData) {
-            videoDownloads = data.eventData['Download Video']?.value || data.eventData['Download Video'] || 0;
-            audioDownloads = data.eventData['Download Audio']?.value || data.eventData['Download Audio'] || 0;
-          } else if (data.events) {
-            if (Array.isArray(data.events)) {
-              const videoEvent = data.events.find((e: any) => e.name === 'Download Video' || e.event === 'Download Video');
-              const audioEvent = data.events.find((e: any) => e.name === 'Download Audio' || e.event === 'Download Audio');
-              videoDownloads = videoEvent?.value || videoEvent?.count || 0;
-              audioDownloads = audioEvent?.value || audioEvent?.count || 0;
-            } else if (typeof data.events === 'object') {
-              videoDownloads = data.events['Download Video']?.value || data.events['Download Video'] || 0;
-              audioDownloads = data.events['Download Audio']?.value || data.events['Download Audio'] || 0;
-            }
+          // Events can be in different formats
+          if (Array.isArray(eventsData)) {
+            // Find events by exact name match
+            const videoEvent = eventsData.find((e: any) => 
+              e.name === 'Download Video' || 
+              e.event === 'Download Video' ||
+              e.eventName === 'Download Video'
+            );
+            const audioEvent = eventsData.find((e: any) => 
+              e.name === 'Download Audio' || 
+              e.event === 'Download Audio' ||
+              e.eventName === 'Download Audio'
+            );
+            
+            videoDownloads = videoEvent?.value || videoEvent?.count || videoEvent?.total || videoEvent?.y || 0;
+            audioDownloads = audioEvent?.value || audioEvent?.count || audioEvent?.total || audioEvent?.y || 0;
+            
+            console.log("[Footer] Found events:", { videoEvent, audioEvent });
+          } else if (eventsData.events && Array.isArray(eventsData.events)) {
+            // Events nested in events array
+            const videoEvent = eventsData.events.find((e: any) => 
+              e.name === 'Download Video' || 
+              e.event === 'Download Video' ||
+              e.eventName === 'Download Video'
+            );
+            const audioEvent = eventsData.events.find((e: any) => 
+              e.name === 'Download Audio' || 
+              e.event === 'Download Audio' ||
+              e.eventName === 'Download Audio'
+            );
+            
+            videoDownloads = videoEvent?.value || videoEvent?.count || videoEvent?.total || videoEvent?.y || 0;
+            audioDownloads = audioEvent?.value || audioEvent?.count || audioEvent?.total || audioEvent?.y || 0;
+          } else if (typeof eventsData === 'object') {
+            // Events as object with event names as keys
+            videoDownloads = eventsData['Download Video']?.value || eventsData['Download Video']?.count || eventsData['Download Video'] || 0;
+            audioDownloads = eventsData['Download Audio']?.value || eventsData['Download Audio']?.count || eventsData['Download Audio'] || 0;
           }
           
-          console.log("[Footer] Parsed stats:", { videoDownloads, audioDownloads });
+          console.log("[Footer] Final parsed stats:", { videoDownloads, audioDownloads });
           
           setDownloadStats({
             video: typeof videoDownloads === 'number' ? videoDownloads : 0,
             audio: typeof audioDownloads === 'number' ? audioDownloads : 0,
           });
         } else {
-          console.error("[Footer] API response not OK:", response.status, response.statusText);
+          console.error("[Footer] Events API response not OK:", eventsResponse.status, eventsResponse.statusText);
         }
       } catch (error) {
         console.error("Failed to fetch download stats:", error);
