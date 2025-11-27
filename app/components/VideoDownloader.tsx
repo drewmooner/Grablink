@@ -206,8 +206,9 @@ export default function VideoDownloader() {
           ? downloadData.download.url
           : `https://resplendent-passion-production.up.railway.app${downloadData.download.url}`;
         
-        // Mark that we attempted automatic download
+        // Mark that we attempted automatic download BEFORE triggering
         setAutoDownloadAttempted(true);
+        setDownloadProgress(0);
         
         // Start download immediately - no delay
         triggerDownloadWithProgress(
@@ -233,12 +234,19 @@ export default function VideoDownloader() {
     document.body.removeChild(link);
     
     // Track successful download with Umami - separate events for video and audio
-    if (typeof window !== 'undefined' && (window as any).umami) {
-      if (audioOnly) {
-        (window as any).umami('Download Audio');
-      } else {
-        (window as any).umami('Download Video');
+    try {
+      if (typeof window !== 'undefined') {
+        const umami = (window as any).umami;
+        if (typeof umami === 'function') {
+          if (audioOnly) {
+            umami('Download Audio');
+          } else {
+            umami('Download Video');
+          }
+        }
       }
+    } catch (error) {
+      console.error('Umami tracking error:', error);
     }
   };
 
@@ -316,22 +324,27 @@ export default function VideoDownloader() {
       setDownloadProgress(100);
       
       // Track successful download with Umami - separate events for video and audio
-      if (typeof window !== 'undefined' && (window as any).umami) {
-        if (audioOnly) {
-          (window as any).umami('Download Audio');
-        } else {
-          (window as any).umami('Download Video');
+      try {
+        if (typeof window !== 'undefined') {
+          const umami = (window as any).umami;
+          if (typeof umami === 'function') {
+            if (audioOnly) {
+              umami('Download Audio');
+            } else {
+              umami('Download Video');
+            }
+          }
         }
+      } catch (error) {
+        console.error('Umami tracking error:', error);
       }
       
       // Reset progress after a short delay
       setTimeout(() => {
         setIsDownloading(false);
         setDownloadProgress(0);
-        // Reset auto download flag after a delay so manual download button can appear if needed
-        setTimeout(() => {
-          setAutoDownloadAttempted(false);
-        }, 5000); // Hide manual download button after 5 seconds
+        // Don't reset autoDownloadAttempted - keep it true to prevent showing the button
+        // The button should only show if download truly failed (which we'll detect differently)
       }, 1000);
     } catch (error) {
       console.error("Download error:", error);
@@ -877,10 +890,12 @@ export default function VideoDownloader() {
                 </div>
               )}
               
-              {result.downloadUrl && !isDownloading && !autoDownloadAttempted && (
+              {result.downloadUrl && !isDownloading && !autoDownloadAttempted && downloadProgress === 0 && (
                 <button
                   onClick={() => {
                     setAutoDownloadAttempted(true);
+                    setIsDownloading(true);
+                    setDownloadProgress(0);
                     if (result.fileSize) {
                       triggerDownloadWithProgress(
                         result.downloadUrl!,
@@ -889,6 +904,7 @@ export default function VideoDownloader() {
                       );
                     } else {
                       triggerDownload(result.downloadUrl!, result.filename || "video");
+                      setIsDownloading(false);
                     }
                   }}
                   className="text-sm text-[#fb923c] hover:text-[#fb923c]/80 hover:underline font-medium transition-all duration-200 hover:scale-105 transform"
