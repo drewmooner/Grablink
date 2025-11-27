@@ -11,8 +11,11 @@ export default function Footer() {
           {/* Brand Section */}
           <div className="flex flex-col gap-2 w-full md:w-auto">
             <div className="flex items-center gap-3">
-              <span className="text-xl sm:text-2xl font-bold gradient-text">Grablink</span>
+              <span className="text-xl sm:text-2xl font-bold text-[#fb923c]">Grablink</span>
             </div>
+            <p className="text-xs sm:text-sm text-[#fb923c]/80 font-medium leading-relaxed max-w-xs">
+              Your gateway to seamless video downloads. Fast, reliable, and always accessible—download videos from your favorite platforms instantly.
+            </p>
             <p className="text-xs text-[#fb923c]/60 mt-2">
               © {currentYear} Grablink. All rights reserved.
             </p>
