@@ -14,9 +14,46 @@ export class ExtractionError extends Error {
 /**
  * Parse yt-dlp error messages and return specific error codes
  */
-export function parseYtDlpError(error: string): { code: string; message: string } {
-  const errorLower = error.toLowerCase();
-
+export function parseYtDlpError(error: string | any): { code: string; message: string } {
+  // Handle error objects (from execAsync)
+  let errorMessage: string;
+  let errorCode: number | string | undefined;
+  
+  if (typeof error !== "string") {
+    errorCode = error?.code;
+    errorMessage = error?.stderr || error?.stdout || error?.message || String(error);
+  } else {
+    errorMessage = error;
+  }
+  
+  const errorLower = errorMessage.toLowerCase();
+  
+  // Check for command not found by error code (most reliable)
+  if (errorCode === 9009 || errorCode === 127 || errorCode === "ENOENT") {
+    return {
+      code: "COMMAND_NOT_FOUND",
+      message: "yt-dlp or Python is not installed on the server. Please contact support.",
+    };
+  }
+  
+  // Check for command not found in error message
+  if (
+    errorLower.includes("command not found") ||
+    errorLower.includes("python was not found") ||
+    errorLower.includes("python3 was not found") ||
+    errorLower.includes("python: command not found") ||
+    errorLower.includes("python3: command not found") ||
+    errorLower.includes("yt-dlp: command not found") ||
+    errorLower.includes("no such file or directory") ||
+    errorLower.includes("cannot find") ||
+    errorLower.includes("is not recognized")
+  ) {
+    return {
+      code: "COMMAND_NOT_FOUND",
+      message: "yt-dlp or Python is not installed on the server. Please contact support.",
+    };
+  }
+  
   // Handle TikTok-specific errors with friendly messages
   if (errorLower.includes("tiktok") || errorLower.includes("unable to extract webpage") || errorLower.includes("video not available")) {
     if (errorLower.includes("rate limit") || errorLower.includes("too many requests") || errorLower.includes("429")) {

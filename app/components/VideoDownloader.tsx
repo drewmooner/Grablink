@@ -29,6 +29,17 @@ export default function VideoDownloader() {
   const [autoDownloadAttempted, setAutoDownloadAttempted] = useState(false);
   const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Get API base URL: use Railway URL in production, relative URLs in dev
+  const getApiBaseUrl = (): string => {
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname;
+      if (hostname === "grablink.cloud" || hostname.includes("grablink.cloud")) {
+        return "https://resplendent-passion-production.up.railway.app";
+      }
+    }
+    return ""; // Relative URL for localhost
+  };
+
   // Load history on mount
   useEffect(() => {
     loadHistory();
@@ -79,7 +90,7 @@ export default function VideoDownloader() {
       setScanning(true);
       scanTimeoutRef.current = setTimeout(async () => {
         try {
-          const response = await fetch("/api/video/info", {
+          const response = await fetch(`${getApiBaseUrl()}/api/video/info`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ url: url.trim() }),
@@ -130,7 +141,7 @@ export default function VideoDownloader() {
   const loadHistory = async () => {
     try {
       // Fetch history from Railway backend (where downloads are tracked)
-      const response = await fetch("/api/video/history");
+      const response = await fetch(`${getApiBaseUrl()}/api/video/history`);
       const data: HistoryResponse = await response.json();
       if (data.success) {
         setHistory(data);
@@ -162,7 +173,7 @@ export default function VideoDownloader() {
 
     try {
       // Download (video info already scanned)
-      const downloadResponse = await fetch("/api/video/download", {
+      const downloadResponse = await fetch(`${getApiBaseUrl()}/api/video/download`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -194,7 +205,7 @@ export default function VideoDownloader() {
         // Convert relative URL to full Railway URL
         const streamUrl = downloadData.download.url.startsWith('http')
           ? downloadData.download.url
-          : downloadData.download.url;
+          : `${getApiBaseUrl()}${downloadData.download.url}`;
         
         // Mark that we attempted automatic download BEFORE triggering
         setAutoDownloadAttempted(true);
@@ -336,7 +347,7 @@ export default function VideoDownloader() {
   const deleteHistoryEntry = async (id: string) => {
     try {
       // Delete from Railway backend
-      await fetch(`/api/video/history?id=${id}`, { method: "DELETE" });
+      await fetch(`${getApiBaseUrl()}/api/video/history?id=${id}`, { method: "DELETE" });
       loadHistory();
     } catch (error) {
       console.error("Failed to delete history entry:", error);
@@ -346,7 +357,7 @@ export default function VideoDownloader() {
   const clearHistory = async () => {
     try {
       // Clear from Railway backend
-      await fetch("/api/video/history", {
+      await fetch(`${getApiBaseUrl()}/api/video/history`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "clear" }),
@@ -773,7 +784,7 @@ export default function VideoDownloader() {
                       setVideoInfo(null);
                       setScanning(true);
                       try {
-                        const response = await fetch("/api/video/info", {
+                        const response = await fetch(`${getApiBaseUrl()}/api/video/info`, {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({ url: url.trim() }),

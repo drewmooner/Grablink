@@ -183,8 +183,8 @@ export async function getVideoInfo(url: string): Promise<VideoInfoResponse> {
 
       // If we still have an error after fallback attempts, return error
       if (execError) {
-        const errorOutput = execError.stderr || execError.stdout || execError.message || "";
-        const parsedError = parseYtDlpError(errorOutput);
+        // Pass the full error object to parseYtDlpError so it can check error codes
+        const parsedError = parseYtDlpError(execError);
         
         return {
           success: false,
@@ -616,12 +616,12 @@ export async function downloadVideo(
         console.log("[downloadVideo] Fallback command succeeded");
       } catch (fallbackError: any) {
         // If fallback also fails, parse and throw the original error
-        const parsedError = parseYtDlpError(errorOutput);
+        const parsedError = parseYtDlpError(execError);
         throw new ExtractionError(parsedError.message, parsedError.code, { url, quality });
       }
     } else {
-      // Parse yt-dlp error for non-format errors
-      const parsedError = parseYtDlpError(errorOutput);
+      // Parse yt-dlp error for non-format errors - pass full error object
+      const parsedError = parseYtDlpError(execError);
       throw new ExtractionError(parsedError.message, parsedError.code, { url, quality });
     }
   }
