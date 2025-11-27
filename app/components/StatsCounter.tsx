@@ -105,30 +105,6 @@ export default function StatsCounter() {
         });
       } catch (error) {
         console.error("[StatsCounter] Failed to fetch stats:", error);
-          // If API fails, try alternative endpoint format
-          const altResponse = await fetch(
-            `https://cloud.umami.is/api/websites/5d7c0418-ad3d-43b6-be7e-b3ff326e86b7/stats?shareCode=UAh3uDLWxgTu2Sva`,
-            {
-              headers: {
-                Accept: "application/json",
-              },
-            }
-          );
-          
-          if (altResponse.ok) {
-            const altData = await altResponse.json();
-            const videoDownloads = altData.eventData?.['Download Video']?.value || 0;
-            const audioDownloads = altData.eventData?.['Download Audio']?.value || 0;
-            
-            setStats({
-              visits: altData.pageviews?.value || 0,
-              videoDownloads,
-              audioDownloads,
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch stats:", error);
         // Set fallback values on error
         setStats({ visits: 0, videoDownloads: 0, audioDownloads: 0 });
       } finally {
