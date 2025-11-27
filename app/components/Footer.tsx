@@ -18,12 +18,35 @@ export default function Footer() {
 
         if (response.ok) {
           const data = await response.json();
-          const videoDownloads = data.eventData?.['Download Video']?.value || 0;
-          const audioDownloads = data.eventData?.['Download Audio']?.value || 0;
+          console.log("[Footer] Umami API response:", data);
+          
+          let videoDownloads = 0;
+          let audioDownloads = 0;
+          
+          // Try multiple possible data structures
+          if (data.eventData) {
+            videoDownloads = data.eventData['Download Video']?.value || data.eventData['Download Video'] || 0;
+            audioDownloads = data.eventData['Download Audio']?.value || data.eventData['Download Audio'] || 0;
+          } else if (data.events) {
+            if (Array.isArray(data.events)) {
+              const videoEvent = data.events.find((e: any) => e.name === 'Download Video' || e.event === 'Download Video');
+              const audioEvent = data.events.find((e: any) => e.name === 'Download Audio' || e.event === 'Download Audio');
+              videoDownloads = videoEvent?.value || videoEvent?.count || 0;
+              audioDownloads = audioEvent?.value || audioEvent?.count || 0;
+            } else if (typeof data.events === 'object') {
+              videoDownloads = data.events['Download Video']?.value || data.events['Download Video'] || 0;
+              audioDownloads = data.events['Download Audio']?.value || data.events['Download Audio'] || 0;
+            }
+          }
+          
+          console.log("[Footer] Parsed stats:", { videoDownloads, audioDownloads });
+          
           setDownloadStats({
             video: typeof videoDownloads === 'number' ? videoDownloads : 0,
             audio: typeof audioDownloads === 'number' ? audioDownloads : 0,
           });
+        } else {
+          console.error("[Footer] API response not OK:", response.status, response.statusText);
         }
       } catch (error) {
         console.error("Failed to fetch download stats:", error);
