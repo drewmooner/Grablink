@@ -92,12 +92,27 @@ setInterval(() => {
 }, CLEANUP_INTERVAL);
 
 /**
- * Get history key from IP address or session
+ * Get history key from IP address and User-Agent for better isolation
  */
-function getHistoryKey(ip?: string): string {
-  // Use IP address if available, otherwise use a default key
-  // In production, you might want to use session IDs or other identifiers
-  return ip || "default";
+function getHistoryKey(ip?: string, userAgent?: string): string {
+  // Create a unique key from IP + User-Agent to ensure proper isolation
+  // This prevents users from seeing each other's history
+  const ipPart = ip && ip !== "unknown" ? ip : "no-ip";
+  const uaPart = userAgent ? userAgent.substring(0, 50).replace(/[^a-zA-Z0-9]/g, "") : "no-ua";
+  
+  // Create a hash-like key from IP and User-Agent
+  // This ensures each user gets their own history even if IP is shared (NAT/proxy)
+  const combined = `${ipPart}_${uaPart}`;
+  
+  // Use a simple hash to keep key length reasonable
+  let hash = 0;
+  for (let i = 0; i < combined.length; i++) {
+    const char = combined.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  return `user_${Math.abs(hash).toString(36)}`;
 }
 
 /**
@@ -105,9 +120,10 @@ function getHistoryKey(ip?: string): string {
  */
 export async function addToHistory(
   entry: Omit<HistoryEntry, "id" | "downloadedAt">,
-  ip?: string
+  ip?: string,
+  userAgent?: string
 ): Promise<string> {
-  const historyKey = getHistoryKey(ip);
+  const historyKey = getHistoryKey(ip, userAgent);
   const history = historyStore.get(historyKey) || [];
 
   const newEntry: HistoryEntry = {
@@ -137,13 +153,13 @@ export async function addToHistory(
 /**
  * Get history for a user
  */
-export async function getHistory(ip?: string, limit: number = 50): Promise<HistoryEntry[]> {
+export async function getHistory(ip?: string, limit: number = 50, userAgent?: string): Promise<HistoryEntry[]> {
   // Ensure history is loaded from file
   if (historyStore.size === 0) {
     await loadHistoryFromFile();
   }
   
-  const historyKey = getHistoryKey(ip);
+  const historyKey = getHistoryKey(ip, userAgent);
   const history = historyStore.get(historyKey) || [];
   
   return history.slice(0, limit);
@@ -152,8 +168,8 @@ export async function getHistory(ip?: string, limit: number = 50): Promise<Histo
 /**
  * Get single history entry by ID
  */
-export function getHistoryEntry(id: string, ip?: string): HistoryEntry | null {
-  const historyKey = getHistoryKey(ip);
+export function getHistoryEntry(id: string, ip?: string, userAgent?: string): HistoryEntry | null {
+  const historyKey = getHistoryKey(ip, userAgent);
   const history = historyStore.get(historyKey) || [];
   
   return history.find((entry) => entry.id === id) || null;
@@ -162,8 +178,8 @@ export function getHistoryEntry(id: string, ip?: string): HistoryEntry | null {
 /**
  * Clear history for a user
  */
-export async function clearHistory(ip?: string): Promise<void> {
-  const historyKey = getHistoryKey(ip);
+export async function clearHistory(ip?: string, userAgent?: string): Promise<void> {
+  const historyKey = getHistoryKey(ip, userAgent);
   historyStore.delete(historyKey);
   
   // Save to file
@@ -173,8 +189,8 @@ export async function clearHistory(ip?: string): Promise<void> {
 /**
  * Delete single history entry
  */
-export async function deleteHistoryEntry(id: string, ip?: string): Promise<boolean> {
-  const historyKey = getHistoryKey(ip);
+export async function deleteHistoryEntry(id: string, ip?: string, userAgent?: string): Promise<boolean> {
+  const historyKey = getHistoryKey(ip, userAgent);
   const history = historyStore.get(historyKey) || [];
   
   const index = history.findIndex((entry) => entry.id === id);

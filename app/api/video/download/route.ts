@@ -163,10 +163,11 @@ async function handleDownload(request: NextRequest) {
       const fileStats = await fs.stat(normalizedFilePath);
       const fileSize = fileStats.size;
 
-      // Get client IP for history tracking
+      // Get client IP and User-Agent for history tracking
       const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0] || 
                        request.headers.get("x-real-ip") || 
                        "unknown";
+      const userAgent = request.headers.get("user-agent") || "";
 
       // Add to history (links only, no files) - track all downloads
       // Wrap in try-catch to prevent history errors from breaking the download
@@ -185,7 +186,8 @@ async function handleDownload(request: NextRequest) {
             fileSize: fileSize, // Track file size
             duration: metadata.duration || undefined, // Track video duration
           },
-          clientIp
+          clientIp,
+          userAgent
         );
       } catch (historyError) {
         // Log history error but don't fail the download

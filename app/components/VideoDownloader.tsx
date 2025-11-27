@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import type { VideoDownloadResponse, VideoInfoResponse, HistoryResponse } from "@/lib/types";
+import type { VideoDownloadResponse, VideoInfoResponse, HistoryResponse, HistoryEntry } from "@/lib/types";
 import Footer from "./Footer";
 
 interface DownloadResult {
@@ -138,16 +138,45 @@ export default function VideoDownloader() {
     };
   }, [url]);
 
-  const loadHistory = async () => {
+  const loadHistory = () => {
     try {
-      // Fetch history from Railway backend (where downloads are tracked)
-      const response = await fetch(`${getApiBaseUrl()}/api/video/history`);
-      const data: HistoryResponse = await response.json();
-      if (data.success) {
-        setHistory(data);
+      // Load history from browser localStorage
+      if (typeof window !== "undefined") {
+        const stored = localStorage.getItem("grablink-history");
+        if (stored) {
+          const historyEntries: HistoryEntry[] = JSON.parse(stored);
+          setHistory({
+            success: true,
+            history: historyEntries,
+            total: historyEntries.length,
+          });
+        } else {
+          setHistory({
+            success: true,
+            history: [],
+            total: 0,
+          });
+        }
       }
     } catch (error) {
       console.error("Failed to load history:", error);
+      setHistory({
+        success: false,
+        history: [],
+        total: 0,
+      });
+    }
+  };
+
+  const saveHistoryToLocalStorage = (entries: HistoryEntry[]) => {
+    try {
+      if (typeof window !== "undefined") {
+        // Keep only last 500 entries
+        const limited = entries.slice(0, 500);
+        localStorage.setItem("grablink-history", JSON.stringify(limited));
+      }
+    } catch (error) {
+      console.error("Failed to save history to localStorage:", error);
     }
   };
 
@@ -197,10 +226,32 @@ export default function VideoDownloader() {
         fileSize: downloadData.video?.size, // Use the actual file size from response
       });
 
-      // Reload history
-      loadHistory();
+      // Add to local history
+      if (downloadData.metadata && downloadData.video) {
+        const historyEntry: HistoryEntry = {
+          id: downloadData.historyId || `hist_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+          url,
+          platform: downloadData.platform,
+          title: downloadData.metadata.title || "Untitled",
+          author: downloadData.metadata.author || "Unknown",
+          format: audioOnly ? "audio" : "video",
+          quality: downloadData.video.quality || "original",
+          downloadedAt: Date.now(),
+          downloadId: downloadData.downloadId,
+          fileSize: downloadData.video.size,
+          duration: downloadData.video.duration,
+        };
+        
+        const currentHistory = history?.history || [];
+        const updatedHistory = [historyEntry, ...currentHistory].slice(0, 500);
+        saveHistoryToLocalStorage(updatedHistory);
+        setHistory({
+          success: true,
+          history: updatedHistory,
+          total: updatedHistory.length,
+        });
+      }
 
-      // Auto-download immediately if URL is available with progress tracking
       if (downloadData.download?.url) {
         // Convert relative URL to full Railway URL
         const streamUrl = downloadData.download.url.startsWith('http')
@@ -344,25 +395,31 @@ export default function VideoDownloader() {
     // The useEffect will handle scanning, and user can click download when ready
   };
 
-  const deleteHistoryEntry = async (id: string) => {
+  const deleteHistoryEntry = (id: string) => {
     try {
-      // Delete from Railway backend
-      await fetch(`${getApiBaseUrl()}/api/video/history?id=${id}`, { method: "DELETE" });
-      loadHistory();
+      const currentHistory = history?.history || [];
+      const updatedHistory = currentHistory.filter(entry => entry.id !== id);
+      saveHistoryToLocalStorage(updatedHistory);
+      setHistory({
+        success: true,
+        history: updatedHistory,
+        total: updatedHistory.length,
+      });
     } catch (error) {
       console.error("Failed to delete history entry:", error);
     }
   };
 
-  const clearHistory = async () => {
+  const clearHistory = () => {
     try {
-      // Clear from Railway backend
-      await fetch(`${getApiBaseUrl()}/api/video/history`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "clear" }),
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("grablink-history");
+      }
+      setHistory({
+        success: true,
+        history: [],
+        total: 0,
       });
-      loadHistory();
     } catch (error) {
       console.error("Failed to clear history:", error);
     }

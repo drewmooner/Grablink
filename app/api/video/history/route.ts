@@ -29,12 +29,13 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const limit = parseInt(searchParams.get("limit") || "50", 10);
 
-    // Get client IP for history tracking
+    // Get client IP and User-Agent for history tracking
     const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0] || 
                      request.headers.get("x-real-ip") || 
                      "unknown";
+    const userAgent = request.headers.get("user-agent") || "";
 
-    const history = await getHistory(clientIp, limit);
+    const history = await getHistory(clientIp, limit, userAgent);
 
     return NextResponse.json<HistoryResponse>(
       {
@@ -73,12 +74,13 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Get client IP
+    // Get client IP and User-Agent
     const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0] || 
                      request.headers.get("x-real-ip") || 
                      "unknown";
+    const userAgent = request.headers.get("user-agent") || "";
 
-    const deleted = await deleteHistoryEntry(id, clientIp);
+    const deleted = await deleteHistoryEntry(id, clientIp, userAgent);
 
     if (deleted) {
       return NextResponse.json({ success: true }, { status: 200, headers: corsHeaders });
@@ -107,12 +109,13 @@ export async function POST(request: NextRequest) {
     const action = body.action;
 
     if (action === "clear") {
-      // Get client IP
+      // Get client IP and User-Agent
       const clientIp = request.headers.get("x-forwarded-for")?.split(",")[0] || 
                        request.headers.get("x-real-ip") || 
                        "unknown";
+      const userAgent = request.headers.get("user-agent") || "";
 
-      await clearHistory(clientIp);
+      await clearHistory(clientIp, userAgent);
 
       return NextResponse.json({ success: true }, { status: 200, headers: corsHeaders });
     } else {
