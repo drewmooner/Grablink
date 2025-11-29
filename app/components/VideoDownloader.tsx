@@ -395,19 +395,34 @@ export default function VideoDownloader() {
       try {
         if (typeof window !== "undefined") {
           const umami = (window as any).umami;
+          const eventName = audioOnly ? "Download Audio" : "Download Video";
+          
           if (umami) {
-            const eventName = audioOnly ? "Download Audio" : "Download Video";
             // Umami can be a function or an object with track method
             if (typeof umami === "function") {
               umami(eventName);
+              console.log("[VideoDownloader] Tracked Umami event:", eventName, "(function call)");
             } else if (umami.track && typeof umami.track === "function") {
               umami.track(eventName);
+              console.log("[VideoDownloader] Tracked Umami event:", eventName, "(track method)");
             } else {
-              console.warn("[VideoDownloader] Umami is not a function or trackable object");
+              console.warn("[VideoDownloader] Umami is not a function or trackable object", umami);
             }
-            console.log("[VideoDownloader] Tracked Umami event:", eventName);
           } else {
-            console.warn("[VideoDownloader] Umami not available");
+            console.warn("[VideoDownloader] Umami not available - window.umami is undefined");
+            // Try to wait a bit and retry
+            setTimeout(() => {
+              const retryUmami = (window as any).umami;
+              if (retryUmami) {
+                if (typeof retryUmami === "function") {
+                  retryUmami(eventName);
+                  console.log("[VideoDownloader] Tracked Umami event (retry):", eventName);
+                } else if (retryUmami.track) {
+                  retryUmami.track(eventName);
+                  console.log("[VideoDownloader] Tracked Umami event (retry):", eventName);
+                }
+              }
+            }, 500);
           }
         }
       } catch (error) {
@@ -443,15 +458,31 @@ export default function VideoDownloader() {
       try {
         if (typeof window !== "undefined") {
           const umami = (window as any).umami;
+          const eventName = audioOnly ? "Download Audio" : "Download Video";
+          
           if (umami) {
-            const eventName = audioOnly ? "Download Audio" : "Download Video";
             // Umami can be a function or an object with track method
             if (typeof umami === "function") {
               umami(eventName);
+              console.log("[VideoDownloader] Tracked Umami event (fallback):", eventName, "(function call)");
             } else if (umami.track && typeof umami.track === "function") {
               umami.track(eventName);
+              console.log("[VideoDownloader] Tracked Umami event (fallback):", eventName, "(track method)");
             }
-            console.log("[VideoDownloader] Tracked Umami event (fallback):", eventName);
+          } else {
+            // Retry after delay
+            setTimeout(() => {
+              const retryUmami = (window as any).umami;
+              if (retryUmami) {
+                if (typeof retryUmami === "function") {
+                  retryUmami(eventName);
+                  console.log("[VideoDownloader] Tracked Umami event (fallback retry):", eventName);
+                } else if (retryUmami.track) {
+                  retryUmami.track(eventName);
+                  console.log("[VideoDownloader] Tracked Umami event (fallback retry):", eventName);
+                }
+              }
+            }, 500);
           }
         }
       } catch (error) {

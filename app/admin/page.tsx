@@ -191,14 +191,19 @@ function AdminPanelContent() {
       if (allTimeResponse.ok) {
         const allTimeData = await allTimeResponse.json();
         console.log("[Admin] All-time API response:", allTimeData);
+        console.log("[Admin] API Base URL used:", apiBase || "relative");
         allTime = {
           video: allTimeData.videoDownloads || 0,
           audio: allTimeData.audioDownloads || 0,
           pageviews: allTimeData.pageviews || 0,
         };
         console.log("[Admin] All-time stats parsed:", allTime);
+        if (allTimeData.error) {
+          console.warn("[Admin] API returned error:", allTimeData.error);
+        }
       } else {
-        console.error("[Admin] All-time response not OK:", allTimeResponse.status);
+        const errorText = await allTimeResponse.text().catch(() => "Unknown error");
+        console.error("[Admin] All-time response not OK:", allTimeResponse.status, errorText);
       }
 
       if (todayResponse.ok) {
@@ -210,8 +215,12 @@ function AdminPanelContent() {
           pageviews: todayData.pageviews || 0,
         };
         console.log("[Admin] Today stats parsed:", today);
+        if (todayData.error) {
+          console.warn("[Admin] Today API returned error:", todayData.error);
+        }
       } else {
-        console.error("[Admin] Today response not OK:", todayResponse.status);
+        const errorText = await todayResponse.text().catch(() => "Unknown error");
+        console.error("[Admin] Today response not OK:", todayResponse.status, errorText);
       }
 
       const total = allTime.video + allTime.audio;
