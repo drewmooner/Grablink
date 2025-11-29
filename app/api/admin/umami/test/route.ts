@@ -54,11 +54,18 @@ export async function GET() {
         let audioDownloads = 0;
 
         events.forEach((event: any) => {
-          if (event.eventType === 1) {
+          // Check multiple possible field names
+          const eventType = event.eventType || event.type || event.event_type;
+          const eventName = event.eventName || event.name || event.event_name || event.data?.name;
+          
+          console.log("[Test] Event:", JSON.stringify(event, null, 2));
+          console.log("[Test] Parsed - eventType:", eventType, "eventName:", eventName);
+          
+          if (eventType === 1 || (!eventType && !eventName)) {
             pageviews++;
-          } else if (event.eventName === "Download Video") {
+          } else if (eventName === "Download Video") {
             videoDownloads++;
-          } else if (event.eventName === "Download Audio") {
+          } else if (eventName === "Download Audio") {
             audioDownloads++;
           }
         });
@@ -70,6 +77,8 @@ export async function GET() {
           videoDownloads,
           audioDownloads,
           sampleEvent: events[0] || null,
+          allEvents: events.slice(0, 10), // First 10 events for debugging
+          fullResponse: eventsData, // Full response structure
         };
 
         results.status = "success";
