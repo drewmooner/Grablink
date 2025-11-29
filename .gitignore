@@ -50,3 +50,6 @@ next-env.d.ts
 
 # history files
 **/grablink-history/
+
+# pause state
+.pause-state.json

@@ -27,6 +27,8 @@ export default function VideoDownloader() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [showNoHistoryMessage, setShowNoHistoryMessage] = useState(false);
   const [autoDownloadAttempted, setAutoDownloadAttempted] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [pauseMessage, setPauseMessage] = useState<string>("We'll be back soon!");
   const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Get API base URL: use Railway URL in production, relative URLs in dev
@@ -40,9 +42,37 @@ export default function VideoDownloader() {
     return ""; // Relative URL for localhost
   };
 
-  // Load history on mount
+  // Check pause state
+  const checkPauseState = async () => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
+      const response = await fetch("/api/admin/pause", { 
+        cache: "no-store",
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setIsPaused(data.paused || false);
+        setPauseMessage(data.message || "We'll be back soon!");
+      }
+    } catch (error) {
+      // Silently handle network errors - don't log to console
+      // This prevents console spam when API is unavailable
+      // The app will continue to work normally if pause state check fails
+    }
+  };
+
+  // Load history on mount and check pause state
   useEffect(() => {
     loadHistory();
+    checkPauseState();
+    const pauseInterval = setInterval(checkPauseState, 1000); // Check every 1 second for instant toggle updates
+    return () => clearInterval(pauseInterval);
   }, []);
 
   // Clipboard paste detection
@@ -360,6 +390,28 @@ export default function VideoDownloader() {
 
       setDownloadProgress(100);
       
+      // Track Umami event
+      try {
+        if (typeof window !== "undefined") {
+          const umami = (window as any).umami;
+          if (umami) {
+            const eventName = audioOnly ? "Download Audio" : "Download Video";
+            // Umami can be a function or an object with track method
+            if (typeof umami === "function") {
+              umami(eventName);
+            } else if (umami.track && typeof umami.track === "function") {
+              umami.track(eventName);
+            } else {
+              console.warn("[VideoDownloader] Umami is not a function or trackable object");
+            }
+            console.log("[VideoDownloader] Tracked Umami event:", eventName);
+          } else {
+            console.warn("[VideoDownloader] Umami not available");
+          }
+        }
+      } catch (error) {
+        console.error("Failed to track Umami event:", error);
+      }
       
       // Reset progress after a short delay
       setTimeout(() => {
@@ -385,6 +437,25 @@ export default function VideoDownloader() {
       
       // Fallback to simple download
       triggerDownload(downloadUrl, filename);
+      
+      // Track Umami event for fallback download
+      try {
+        if (typeof window !== "undefined") {
+          const umami = (window as any).umami;
+          if (umami) {
+            const eventName = audioOnly ? "Download Audio" : "Download Video";
+            // Umami can be a function or an object with track method
+            if (typeof umami === "function") {
+              umami(eventName);
+            } else if (umami.track && typeof umami.track === "function") {
+              umami.track(eventName);
+            }
+            console.log("[VideoDownloader] Tracked Umami event (fallback):", eventName);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to track Umami event (fallback):", error);
+      }
     }
   };
 
@@ -544,6 +615,29 @@ export default function VideoDownloader() {
     
     return null;
   };
+
+  // Show maintenance message if paused
+  if (isPaused) {
+    return (
+      <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center relative">
+        <div className="text-center px-4 z-50">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-black mb-4 text-[#fb923c]" style={{ 
+            textShadow: '0 0 20px rgba(251, 146, 60, 0.5), 0 0 40px rgba(251, 146, 60, 0.3)'
+          }}>
+            Grablink
+          </h1>
+          <div className="bg-[#0a0a0a] border border-[#fb923c]/30 rounded-lg p-8 max-w-md mx-auto">
+            <div className="text-4xl mb-4">🔧</div>
+            <h2 className="text-2xl font-bold text-[#fb923c] mb-4">Under Maintenance</h2>
+            <p className="text-gray-300 text-lg">{pauseMessage}</p>
+            <div className="mt-6 text-gray-400 text-sm">
+              We're working hard to improve your experience. Check back soon!
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#1a1a1a] animated-background relative">
@@ -930,6 +1024,28 @@ export default function VideoDownloader() {
                     } else {
                       triggerDownload(result.downloadUrl!, result.filename || "video");
                       setIsDownloading(false);
+                      // Track Umami event for simple download
+                      try {
+                        if (typeof window !== "undefined") {
+                          const umami = (window as any).umami;
+                          if (umami) {
+                            const eventName = audioOnly ? "Download Audio" : "Download Video";
+                            // Umami can be a function or an object with track method
+                            if (typeof umami === "function") {
+                              umami(eventName);
+                            } else if (umami.track && typeof umami.track === "function") {
+                              umami.track(eventName);
+                            } else {
+                              console.warn("[VideoDownloader] Umami is not a function or trackable object");
+                            }
+                            console.log("[VideoDownloader] Tracked Umami event (simple download):", eventName);
+                          } else {
+                            console.warn("[VideoDownloader] Umami not available for simple download");
+                          }
+                        }
+                      } catch (error) {
+                        console.error("Failed to track Umami event:", error);
+                      }
                     }
                   }}
                   className="text-sm text-[#fb923c] hover:text-[#fb923c]/80 hover:underline font-medium transition-all duration-200 hover:scale-105 transform"

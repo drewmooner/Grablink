@@ -9,7 +9,7 @@ export default function DownloadCounter() {
     const fetchCount = async () => {
       try {
         const response = await fetch(
-          `https://cloud.umami.is/api/share/UAh3uDLWxgTu2Sva/events?startAt=0&endAt=${Date.now()}`,
+          `https://cloud.umami.is/api/share/SgUhlS4KYP3zIBI7/events?startAt=0&endAt=${Date.now()}`,
           {
             headers: { Accept: "application/json" },
             cache: "no-store",

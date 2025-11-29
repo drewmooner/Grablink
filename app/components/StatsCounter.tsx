@@ -21,7 +21,7 @@ export default function StatsCounter() {
       try {
         // Fetch pageviews from stats endpoint
         const statsResponse = await fetch(
-          "https://cloud.umami.is/api/share/UAh3uDLWxgTu2Sva/stats",
+          "https://cloud.umami.is/api/share/SgUhlS4KYP3zIBI7/stats",
           {
             headers: { Accept: "application/json" },
             cache: 'no-store', // Prevent caching
@@ -41,7 +41,7 @@ export default function StatsCounter() {
         const endAt = now;
         
         const eventsResponse = await fetch(
-          `https://cloud.umami.is/api/share/UAh3uDLWxgTu2Sva/events?startAt=${startAt}&endAt=${endAt}`,
+          `https://cloud.umami.is/api/share/SgUhlS4KYP3zIBI7/events?startAt=${startAt}&endAt=${endAt}`,
           {
             headers: { Accept: "application/json" },
             cache: 'no-store', // Prevent caching
