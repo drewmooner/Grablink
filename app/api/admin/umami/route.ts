@@ -54,10 +54,13 @@ export async function GET(request: NextRequest) {
     // and custom events (downloads) from events with eventType: 2 and eventName set
     if (type === "all" || type === "stats" || type === "events") {
       try {
+        // Try the events endpoint - this should return all events including custom events
         const eventsUrl = `${UMAMI_API_BASE_URL}/websites/${UMAMI_WEBSITE_ID}/events`;
         const eventsParams = new URLSearchParams();
         eventsParams.append("startAt", startAt);
         eventsParams.append("endAt", endAt);
+        // Add unit parameter if needed (day, hour, etc.)
+        // eventsParams.append("unit", "day");
 
         // Always include date parameters to avoid 500 error
         const fullEventsUrl = `${eventsUrl}?${eventsParams.toString()}`;
@@ -77,35 +80,49 @@ export async function GET(request: NextRequest) {
 
         if (eventsResponse.ok) {
           const eventsData = await eventsResponse.json();
+          console.log("[Umami API] Full response structure:", JSON.stringify(eventsData, null, 2).substring(0, 2000));
+          
           const events = eventsData.data || eventsData || [];
           const totalCount = eventsData.count || events.length;
           console.log("[Umami API] Events fetch successful, found", events.length, "events (total:", totalCount, ")");
+          console.log("[Umami API] Response keys:", Object.keys(eventsData));
 
           // Parse pageviews (eventType: 1) and custom events (eventType: 2 with eventName)
           let pageviews = 0;
           let videoDownloads = 0;
           let audioDownloads = 0;
 
-          // Debug: log first few events to see structure
-          if (events.length > 0) {
-            console.log("[Umami API] Sample event structure:", JSON.stringify(events[0], null, 2));
-          }
+          // Debug: log ALL events to see structure
+          console.log("[Umami API] Total events to parse:", events.length);
+          events.forEach((event: any, index: number) => {
+            console.log(`[Umami API] Event ${index + 1}:`, JSON.stringify(event, null, 2));
+          });
 
           events.forEach((event: any) => {
             // eventType: 1 = pageview, eventType: 2 = custom event
-            if (event.eventType === 1) {
+            // Also check for different possible field names
+            const eventType = event.eventType || event.type || event.event_type;
+            const eventName = event.eventName || event.name || event.event_name || event.data?.name;
+            
+            console.log("[Umami API] Processing event - eventType:", eventType, "eventName:", eventName, "full event:", JSON.stringify(event));
+            
+            if (eventType === 1 || (!eventType && !eventName)) {
+              // Pageview: eventType 1 or no eventType/eventName
               pageviews++;
-            } else if (event.eventType === 2) {
-              // Custom events have eventType: 2
-              if (event.eventName && event.eventName !== "") {
-                console.log("[Umami API] Found custom event:", event.eventName, "eventType:", event.eventType, "id:", event.id);
-                if (event.eventName === "Download Video") {
+              console.log("[Umami API] Counted as pageview");
+            } else if (eventType === 2 || eventName) {
+              // Custom event: eventType 2 or has eventName
+              if (eventName && eventName !== "") {
+                console.log("[Umami API] Found custom event:", eventName, "eventType:", eventType, "id:", event.id);
+                if (eventName === "Download Video") {
                   videoDownloads++;
-                } else if (event.eventName === "Download Audio") {
+                  console.log("[Umami API] ✓ Counted video download");
+                } else if (eventName === "Download Audio") {
                   audioDownloads++;
+                  console.log("[Umami API] ✓ Counted audio download");
                 } else {
                   // Log other custom events for debugging
-                  console.log("[Umami API] Other custom event:", event.eventName);
+                  console.log("[Umami API] Other custom event:", eventName);
                 }
               } else {
                 // Log events with eventType 2 but no eventName
@@ -113,7 +130,7 @@ export async function GET(request: NextRequest) {
               }
             } else {
               // Log unexpected event types
-              console.log("[Umami API] Unexpected eventType:", event.eventType, "eventName:", event.eventName);
+              console.log("[Umami API] Unexpected event - eventType:", eventType, "eventName:", eventName, "full:", JSON.stringify(event));
             }
           });
 
@@ -146,12 +163,15 @@ export async function GET(request: NextRequest) {
                   console.log("[Umami API] Fetched page", page, "with", pageEvents.length, "events");
                   
                   pageEvents.forEach((event: any) => {
-                    if (event.eventType === 1) {
+                    const eventType = event.eventType || event.type || event.event_type;
+                    const eventName = event.eventName || event.name || event.event_name || event.data?.name;
+                    
+                    if (eventType === 1 || (!eventType && !eventName)) {
                       pageviews++;
-                    } else if (event.eventType === 2 && event.eventName) {
-                      if (event.eventName === "Download Video") {
+                    } else if ((eventType === 2 || eventName) && eventName) {
+                      if (eventName === "Download Video") {
                         videoDownloads++;
-                      } else if (event.eventName === "Download Audio") {
+                      } else if (eventName === "Download Audio") {
                         audioDownloads++;
                       }
                     }
