@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile, readFile, mkdir } from "fs/promises";
 import { join } from "path";
+import { existsSync } from "fs";
 
-const PAUSE_STATE_FILE = join(process.cwd(), ".pause-state.json");
+// Use /tmp on Vercel (writable), or project root on Railway
+const getPauseStateFile = (): string => {
+  // Check if we're on Vercel (read-only filesystem)
+  if (process.env.VERCEL) {
+    return join("/tmp", ".pause-state.json");
+  }
+  // Railway or local - use project root
+  return join(process.cwd(), ".pause-state.json");
+};
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,17 +27,24 @@ export async function OPTIONS() {
 
 async function getPauseState(): Promise<{ paused: boolean; message?: string }> {
   try {
-    const data = await readFile(PAUSE_STATE_FILE, "utf-8");
-    return JSON.parse(data);
-  } catch {
+    const pauseFile = getPauseStateFile();
+    if (existsSync(pauseFile)) {
+      const data = await readFile(pauseFile, "utf-8");
+      return JSON.parse(data);
+    }
+    return { paused: false };
+  } catch (error) {
+    console.error("Failed to read pause state:", error);
     return { paused: false };
   }
 }
 
 async function setPauseState(state: { paused: boolean; message?: string }): Promise<void> {
   try {
-    await mkdir(process.cwd(), { recursive: true });
-    await writeFile(PAUSE_STATE_FILE, JSON.stringify(state, null, 2), "utf-8");
+    const pauseFile = getPauseStateFile();
+    const dir = process.env.VERCEL ? "/tmp" : process.cwd();
+    await mkdir(dir, { recursive: true });
+    await writeFile(pauseFile, JSON.stringify(state, null, 2), "utf-8");
   } catch (error) {
     console.error("Failed to write pause state:", error);
     throw error;

@@ -27,6 +27,18 @@ interface PauseState {
 function AdminPanelContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  
+  // Get API base URL: use Railway URL in production, relative URLs in dev
+  const getApiBaseUrl = (): string => {
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname;
+      if (hostname === "grablink.cloud" || hostname.includes("grablink.cloud") || hostname.includes("vercel.app")) {
+        return "https://resplendent-passion-production.up.railway.app";
+      }
+    }
+    return ""; // Relative URL for localhost
+  };
+  
   const [stats, setStats] = useState<DownloadStats>({
     total: 0,
     today: 0,
@@ -96,8 +108,9 @@ function AdminPanelContent() {
         return;
       }
 
+      const apiBase = getApiBaseUrl();
       const response = await fetch(
-        `/api/admin/umami?type=all&startAt=${startTime}&endAt=${endTime}`,
+        `${apiBase}/api/admin/umami?type=all&startAt=${startTime}&endAt=${endTime}`,
         { cache: "no-store" }
       );
 
@@ -131,8 +144,9 @@ function AdminPanelContent() {
         return;
       }
 
+      const apiBase = getApiBaseUrl();
       const response = await fetch(
-        `/api/admin/umami?type=all&startAt=${startTime}&endAt=${endTime}`,
+        `${apiBase}/api/admin/umami?type=all&startAt=${startTime}&endAt=${endTime}`,
         { cache: "no-store" }
       );
 
@@ -152,10 +166,12 @@ function AdminPanelContent() {
       todayStart.setHours(0, 0, 0, 0);
       const todayStartTime = todayStart.getTime();
 
+      const apiBase = getApiBaseUrl();
+      
       // Fetch all-time stats and events (use 2 years range to get all events)
       const allTimeStart = now - (2 * 365 * 24 * 60 * 60 * 1000); // 2 years ago
       const allTimeResponse = await fetch(
-        `/api/admin/umami?type=all&startAt=${allTimeStart}&endAt=${now}`,
+        `${apiBase}/api/admin/umami?type=all&startAt=${allTimeStart}&endAt=${now}`,
         {
           cache: "no-store",
         }
@@ -163,7 +179,7 @@ function AdminPanelContent() {
 
       // Fetch today's stats and events
       const todayResponse = await fetch(
-        `/api/admin/umami?type=all&startAt=${todayStartTime}&endAt=${now}`,
+        `${apiBase}/api/admin/umami?type=all&startAt=${todayStartTime}&endAt=${now}`,
         {
           cache: "no-store",
         }
@@ -268,7 +284,8 @@ function AdminPanelContent() {
 
   const loadPauseState = async () => {
     try {
-      const response = await fetch("/api/admin/pause", { cache: "no-store" });
+      const apiBase = getApiBaseUrl();
+      const response = await fetch(`${apiBase}/api/admin/pause`, { cache: "no-store" });
       if (response.ok) {
         const data = await response.json();
         setPauseState(data);
@@ -313,7 +330,8 @@ function AdminPanelContent() {
         }
       } else if (action === "restart") {
         console.log("[Admin] Restarting service...");
-        const response = await fetch("/api/admin/restart", {
+        const apiBase = getApiBaseUrl();
+        const response = await fetch(`${apiBase}/api/admin/restart`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
         });
@@ -373,7 +391,8 @@ function AdminPanelContent() {
                     setPauseState({ paused: newPausedState, message: "We'll be back soon!" });
                     setActionLoading(newPausedState ? "pause" : "resume");
                     try {
-                      const response = await fetch("/api/admin/pause", {
+                      const apiBase = getApiBaseUrl();
+                      const response = await fetch(`${apiBase}/api/admin/pause`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({ 

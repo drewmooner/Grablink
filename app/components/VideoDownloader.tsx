@@ -48,7 +48,8 @@ export default function VideoDownloader() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
       
-      const response = await fetch("/api/admin/pause", { 
+      const apiBase = getApiBaseUrl();
+      const response = await fetch(`${apiBase}/api/admin/pause`, { 
         cache: "no-store",
         signal: controller.signal
       });
