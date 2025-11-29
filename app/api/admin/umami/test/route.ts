@@ -81,7 +81,7 @@ export async function GET() {
           audioDownloads,
           sampleEvent: events[0] || null,
           allEvents: events.slice(0, 10), // First 10 events for debugging
-          fullResponse: eventsData, // Full response structure
+          fullResponse: data, // Full response structure
         };
 
         results.status = "success";
