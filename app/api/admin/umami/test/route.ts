@@ -28,7 +28,10 @@ export async function GET() {
   // Check 2: Test API connection
   if (UMAMI_API_KEY) {
     try {
-      const testUrl = `${UMAMI_API_BASE_URL}/websites/${UMAMI_WEBSITE_ID}/events`;
+      // Add date parameters to get recent events (last 30 days)
+      const now = Date.now();
+      const startAt = now - (30 * 24 * 60 * 60 * 1000); // 30 days ago
+      const testUrl = `${UMAMI_API_BASE_URL}/websites/${UMAMI_WEBSITE_ID}/events?startAt=${startAt}&endAt=${now}`;
       const response = await fetch(testUrl, {
         headers: {
           "x-umami-api-key": UMAMI_API_KEY,
