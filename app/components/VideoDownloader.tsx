@@ -31,15 +31,10 @@ export default function VideoDownloader() {
   const [pauseMessage, setPauseMessage] = useState<string>("We'll be back soon!");
   const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Get API base URL: use Railway URL in production, relative URLs in dev
+  // Get API base URL: use relative URLs (works on Vercel and localhost)
   const getApiBaseUrl = (): string => {
-    if (typeof window !== "undefined") {
-      const hostname = window.location.hostname;
-      if (hostname === "grablink.cloud" || hostname.includes("grablink.cloud")) {
-        return "https://resplendent-passion-production.up.railway.app";
-      }
-    }
-    return ""; // Relative URL for localhost
+    // Always use relative URLs - works on Vercel serverless and localhost
+    return "";
   };
 
   // Check pause state
@@ -284,7 +279,7 @@ export default function VideoDownloader() {
       }
 
       if (downloadData.download?.url) {
-        // Convert relative URL to full Railway URL
+        // Use relative URL (works on Vercel and localhost)
         const streamUrl = downloadData.download.url.startsWith('http')
           ? downloadData.download.url
           : `${getApiBaseUrl()}${downloadData.download.url}`;

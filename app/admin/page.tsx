@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 interface DownloadStats {
@@ -28,15 +28,10 @@ function AdminPanelContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   
-  // Get API base URL: use Railway URL in production, relative URLs in dev
+  // Get API base URL: use relative URLs (works on Vercel and localhost)
   const getApiBaseUrl = (): string => {
-    if (typeof window !== "undefined") {
-      const hostname = window.location.hostname;
-      if (hostname === "grablink.cloud" || hostname.includes("grablink.cloud") || hostname.includes("vercel.app")) {
-        return "https://resplendent-passion-production.up.railway.app";
-      }
-    }
-    return ""; // Relative URL for localhost
+    // Always use relative URLs - works on Vercel serverless and localhost
+    return "";
   };
   
   const [stats, setStats] = useState<DownloadStats>({
@@ -63,31 +58,7 @@ function AdminPanelContent() {
   const [audioCustomEndDate, setAudioCustomEndDate] = useState<string>('');
   const [audioPeriodStats, setAudioPeriodStats] = useState(0);
 
-  useEffect(() => {
-    const password = searchParams.get("pw");
-    if (password !== "kwiny191433") {
-      router.push("/");
-      return;
-    }
-
-    loadStats();
-    checkSiteStatus();
-    loadPauseState();
-    loadVideoPeriodStats();
-    loadAudioPeriodStats();
-
-    const interval = setInterval(() => {
-      loadStats();
-      checkSiteStatus();
-      loadPauseState();
-      loadVideoPeriodStats();
-      loadAudioPeriodStats();
-    }, 20000); // Refresh every 20 seconds for real-time updates
-
-    return () => clearInterval(interval);
-  }, [searchParams, router, videoDateRange, videoCustomStartDate, videoCustomEndDate, audioDateRange, audioCustomStartDate, audioCustomEndDate]);
-
-  const loadVideoPeriodStats = async () => {
+  const loadVideoPeriodStats = useCallback(async () => {
     try {
       const now = Date.now();
       let startTime: number;
@@ -115,15 +86,30 @@ function AdminPanelContent() {
       );
 
       if (response.ok) {
-        const data = await response.json();
-        setVideoPeriodStats(data.videoDownloads || 0);
+        try {
+          const data = await response.json();
+          const count = Number(data.videoDownloads) || 0;
+          console.log("[Admin] Video period stats loaded:", count, "for range", videoDateRange);
+          setVideoPeriodStats(count);
+        } catch (parseError) {
+          console.error("[Admin] Failed to parse video period stats:", parseError);
+          setVideoPeriodStats(0);
+        }
+      } else {
+        try {
+          const errorText = await response.text().catch(() => "Unknown error");
+          console.error("[Admin] Failed to load video period stats:", response.status, errorText.substring(0, 200));
+        } catch (textError) {
+          console.error("[Admin] Failed to load video period stats:", response.status);
+        }
+        setVideoPeriodStats(0);
       }
     } catch (error) {
       console.error("Failed to load video period stats:", error);
     }
-  };
+  }, [videoDateRange, videoCustomStartDate, videoCustomEndDate]);
 
-  const loadAudioPeriodStats = async () => {
+  const loadAudioPeriodStats = useCallback(async () => {
     try {
       const now = Date.now();
       let startTime: number;
@@ -151,15 +137,74 @@ function AdminPanelContent() {
       );
 
       if (response.ok) {
-        const data = await response.json();
-        setAudioPeriodStats(data.audioDownloads || 0);
+        try {
+          const data = await response.json();
+          const count = Number(data.audioDownloads) || 0;
+          console.log("[Admin] Audio period stats loaded:", count, "for range", audioDateRange);
+          setAudioPeriodStats(count);
+        } catch (parseError) {
+          console.error("[Admin] Failed to parse audio period stats:", parseError);
+          setAudioPeriodStats(0);
+        }
+      } else {
+        try {
+          const errorText = await response.text().catch(() => "Unknown error");
+          console.error("[Admin] Failed to load audio period stats:", response.status, errorText.substring(0, 200));
+        } catch (textError) {
+          console.error("[Admin] Failed to load audio period stats:", response.status);
+        }
+        setAudioPeriodStats(0);
       }
     } catch (error) {
       console.error("Failed to load audio period stats:", error);
     }
-  };
+  }, [audioDateRange, audioCustomStartDate, audioCustomEndDate]);
 
-  const loadStats = async () => {
+  const checkSiteStatus = useCallback(async () => {
+    try {
+      // Check if the site is live by checking the current domain
+      const response = await fetch("/api/health", { 
+        method: "GET",
+        cache: "no-store"
+      });
+      if (response.ok) {
+        setSiteStatus({ live: true, lastChecked: Date.now() });
+      } else {
+        setSiteStatus({ live: false, lastChecked: Date.now() });
+      }
+    } catch (error) {
+      setSiteStatus({ live: false, lastChecked: Date.now() });
+    }
+  }, []);
+
+  const loadPauseState = useCallback(async () => {
+    try {
+      const apiBase = getApiBaseUrl();
+      const response = await fetch(`${apiBase}/api/admin/pause`, { cache: "no-store" });
+      if (response.ok) {
+        try {
+          const data = await response.json();
+          setPauseState(data);
+        } catch (parseError) {
+          console.error("[Admin] Failed to parse pause state:", parseError);
+          // Keep current state on parse error
+        }
+      } else {
+        try {
+          const errorText = await response.text().catch(() => "Unknown error");
+          console.error("[Admin] Failed to load pause state:", response.status, errorText.substring(0, 200));
+        } catch (textError) {
+          console.error("[Admin] Failed to load pause state:", response.status);
+        }
+        // Keep current state on error
+      }
+    } catch (error) {
+      console.error("[Admin] Failed to load pause state:", error);
+      // Keep current state on network error
+    }
+  }, []);
+
+  const loadStats = useCallback(async () => {
     try {
       const now = Date.now();
       const todayStart = new Date();
@@ -168,59 +213,145 @@ function AdminPanelContent() {
 
       const apiBase = getApiBaseUrl();
       
-      // Fetch all-time stats and events (use 2 years range to get all events)
-      const allTimeStart = now - (2 * 365 * 24 * 60 * 60 * 1000); // 2 years ago
-      const allTimeResponse = await fetch(
-        `${apiBase}/api/admin/umami?type=all&startAt=${allTimeStart}&endAt=${now}`,
-        {
-          cache: "no-store",
+      // Fetch all-time stats and events (fetch from beginning to get ALL past events)
+      const allTimeStart = 0; // Start from beginning of time to get ALL events
+      
+      // Add timeout to prevent hanging - increased timeout for all-time request (may have many events)
+      const controller1 = new AbortController();
+      const timeout1 = setTimeout(() => controller1.abort(), 30000); // 30 second timeout for all-time request
+      
+      let allTimeResponse: Response | null = null;
+      let todayResponse: Response | null = null;
+      
+      try {
+        allTimeResponse = await fetch(
+          `${apiBase}/api/admin/umami?type=all&startAt=${allTimeStart}&endAt=${now}`,
+          {
+            cache: "no-store",
+            signal: controller1.signal,
+          }
+        );
+        clearTimeout(timeout1);
+      } catch (fetchError) {
+        clearTimeout(timeout1);
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          console.warn("[Admin] All-time request timeout - this is normal if you have many events. Stats will update on next refresh.");
+        } else {
+          console.error("[Admin] All-time fetch error:", fetchError);
         }
-      );
+      }
 
       // Fetch today's stats and events
-      const todayResponse = await fetch(
-        `${apiBase}/api/admin/umami?type=all&startAt=${todayStartTime}&endAt=${now}`,
-        {
-          cache: "no-store",
+      const controller2 = new AbortController();
+      const timeout2 = setTimeout(() => controller2.abort(), 20000); // 20 second timeout for today's request
+      
+      try {
+        todayResponse = await fetch(
+          `${apiBase}/api/admin/umami?type=all&startAt=${todayStartTime}&endAt=${now}`,
+          {
+            cache: "no-store",
+            signal: controller2.signal,
+          }
+        );
+        clearTimeout(timeout2);
+      } catch (fetchError) {
+        clearTimeout(timeout2);
+        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+          console.warn("[Admin] Today request timeout - will retry on next refresh.");
+        } else {
+          console.error("[Admin] Today fetch error:", fetchError);
         }
-      );
+      }
 
       let allTime = { video: 0, audio: 0, pageviews: 0 };
       let today = { video: 0, audio: 0, pageviews: 0 };
 
-      if (allTimeResponse.ok) {
-        const allTimeData = await allTimeResponse.json();
-        console.log("[Admin] All-time API response:", allTimeData);
-        console.log("[Admin] API Base URL used:", apiBase || "relative");
-        allTime = {
-          video: allTimeData.videoDownloads || 0,
-          audio: allTimeData.audioDownloads || 0,
-          pageviews: allTimeData.pageviews || 0,
-        };
-        console.log("[Admin] All-time stats parsed:", allTime);
-        if (allTimeData.error) {
-          console.warn("[Admin] API returned error:", allTimeData.error);
+      if (allTimeResponse && allTimeResponse.ok) {
+        try {
+          const allTimeData = await allTimeResponse.json();
+          console.log("[Admin] All-time API response:", {
+            videoDownloads: allTimeData.videoDownloads,
+            audioDownloads: allTimeData.audioDownloads,
+            pageviews: allTimeData.pageviews,
+            totalEvents: allTimeData.totalEvents,
+            error: allTimeData.error
+          });
+          console.log("[Admin] API Base URL used:", apiBase || "relative");
+          
+          allTime = {
+            video: Number(allTimeData.videoDownloads) || 0,
+            audio: Number(allTimeData.audioDownloads) || 0,
+            pageviews: Number(allTimeData.pageviews) || 0,
+          };
+          
+          console.log("[Admin] All-time stats parsed:", allTime);
+          console.log("[Admin] 📊 ALL-TIME SUMMARY (ALL PAST EVENTS):", {
+            totalVideoDownloads: allTime.video,
+            totalAudioDownloads: allTime.audio,
+            totalDownloads: allTime.video + allTime.audio,
+            totalPageviews: allTime.pageviews,
+            totalEventsInUmami: allTimeData.totalEvents,
+            eventsProcessed: allTimeData.eventsProcessed,
+            dateRange: allTimeData.dateRange
+          });
+          
+          if (allTimeData.error) {
+            console.warn("[Admin] API returned error:", allTimeData.error);
+          }
+        } catch (parseError) {
+          console.error("[Admin] Failed to parse all-time response:", parseError);
+          allTime = { video: 0, audio: 0, pageviews: 0 };
         }
+      } else if (allTimeResponse) {
+        try {
+          const errorText = await allTimeResponse.text().catch(() => "Unknown error");
+          console.error("[Admin] All-time response not OK:", allTimeResponse.status, errorText.substring(0, 200));
+        } catch (textError) {
+          console.error("[Admin] All-time response not OK:", allTimeResponse.status);
+        }
+        allTime = { video: 0, audio: 0, pageviews: 0 };
       } else {
-        const errorText = await allTimeResponse.text().catch(() => "Unknown error");
-        console.error("[Admin] All-time response not OK:", allTimeResponse.status, errorText);
+        console.error("[Admin] All-time response is null - request may have failed or timed out");
+        allTime = { video: 0, audio: 0, pageviews: 0 };
       }
 
-      if (todayResponse.ok) {
-        const todayData = await todayResponse.json();
-        console.log("[Admin] Today API response:", todayData);
-        today = {
-          video: todayData.videoDownloads || 0,
-          audio: todayData.audioDownloads || 0,
-          pageviews: todayData.pageviews || 0,
-        };
-        console.log("[Admin] Today stats parsed:", today);
-        if (todayData.error) {
-          console.warn("[Admin] Today API returned error:", todayData.error);
+      if (todayResponse && todayResponse.ok) {
+        try {
+          const todayData = await todayResponse.json();
+          console.log("[Admin] Today API response:", {
+            videoDownloads: todayData.videoDownloads,
+            audioDownloads: todayData.audioDownloads,
+            pageviews: todayData.pageviews,
+            totalEvents: todayData.totalEvents,
+            error: todayData.error
+          });
+          
+          today = {
+            video: Number(todayData.videoDownloads) || 0,
+            audio: Number(todayData.audioDownloads) || 0,
+            pageviews: Number(todayData.pageviews) || 0,
+          };
+          
+          console.log("[Admin] Today stats parsed:", today);
+          
+          if (todayData.error) {
+            console.warn("[Admin] Today API returned error:", todayData.error);
+          }
+        } catch (parseError) {
+          console.error("[Admin] Failed to parse today response:", parseError);
+          today = { video: 0, audio: 0, pageviews: 0 };
         }
+      } else if (todayResponse) {
+        try {
+          const errorText = await todayResponse.text().catch(() => "Unknown error");
+          console.error("[Admin] Today response not OK:", todayResponse.status, errorText.substring(0, 200));
+        } catch (textError) {
+          console.error("[Admin] Today response not OK:", todayResponse.status);
+        }
+        today = { video: 0, audio: 0, pageviews: 0 };
       } else {
-        const errorText = await todayResponse.text().catch(() => "Unknown error");
-        console.error("[Admin] Today response not OK:", todayResponse.status, errorText);
+        console.error("[Admin] Today response is null - request may have failed or timed out");
+        today = { video: 0, audio: 0, pageviews: 0 };
       }
 
       const total = allTime.video + allTime.audio;
@@ -235,74 +366,104 @@ function AdminPanelContent() {
         audioToday: today.audio,
       };
 
-      // Load period stats based on selected date ranges
-      await loadVideoPeriodStats();
-      await loadAudioPeriodStats();
+      // Load period stats based on selected date ranges (don't wait if they fail)
+      Promise.all([
+        loadVideoPeriodStats().catch(err => console.error("[Admin] Video period stats failed:", err)),
+        loadAudioPeriodStats().catch(err => console.error("[Admin] Audio period stats failed:", err))
+      ]);
 
-      // Check if stats changed (new downloads detected)
+      // Check if stats changed (new downloads or views detected)
       if (previousStats) {
         const hasNewDownloads = 
           newStats.total > previousStats.total ||
           newStats.today > previousStats.today ||
           newStats.video > previousStats.video ||
-          newStats.audio > previousStats.audio;
+          newStats.audio > previousStats.audio ||
+          newStats.videoToday > previousStats.videoToday ||
+          newStats.audioToday > previousStats.audioToday;
         
         if (hasNewDownloads) {
           // Flash animation to indicate update
           setUpdateFlash(true);
-          setTimeout(() => setUpdateFlash(false), 500);
-          console.log("[Admin] New downloads detected!", {
+          setTimeout(() => setUpdateFlash(false), 1000);
+          console.log("[Admin] ⚡ New activity detected!", {
             previous: previousStats,
-            current: newStats
+            current: newStats,
+            changes: {
+              total: newStats.total - previousStats.total,
+              today: newStats.today - previousStats.today,
+              video: newStats.video - previousStats.video,
+              audio: newStats.audio - previousStats.audio,
+              videoToday: newStats.videoToday - previousStats.videoToday,
+              audioToday: newStats.audioToday - previousStats.audioToday,
+            }
           });
         }
       }
 
       // Update stats and previous stats
+      // Always update stats even if API calls failed (use defaults)
       setStats(newStats);
       setPreviousStats(newStats);
       setLastUpdated(new Date());
     } catch (error) {
       console.error("Failed to load stats:", error);
+      // Set default stats on error
+      setStats({
+        total: 0,
+        today: 0,
+        video: 0,
+        audio: 0,
+        videoToday: 0,
+        audioToday: 0,
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [loadVideoPeriodStats, loadAudioPeriodStats, previousStats]);
 
-  const checkSiteStatus = async () => {
-    try {
-      const response = await fetch("https://grablink.cloud", { 
-        method: "HEAD",
-        mode: "no-cors",
-        cache: "no-store"
-      });
-      setSiteStatus({ live: true, lastChecked: Date.now() });
-    } catch (error) {
+  useEffect(() => {
+    const password = searchParams.get("pw");
+    if (password !== "kwiny191433") {
+      router.push("/");
+      return;
+    }
+
+    // Initial load with timeout fallback
+    const initialLoad = async () => {
       try {
-        const response = await fetch("https://resplendent-passion-production.up.railway.app", { 
-          method: "HEAD",
-          mode: "no-cors",
-          cache: "no-store"
-        });
-        setSiteStatus({ live: true, lastChecked: Date.now() });
-      } catch {
-        setSiteStatus({ live: false, lastChecked: Date.now() });
+        await Promise.all([
+          loadStats(),
+          checkSiteStatus().catch(err => console.error("[Admin] Site status check failed:", err)),
+          loadPauseState().catch(err => console.error("[Admin] Pause state load failed:", err)),
+        ]);
+      } catch (error) {
+        console.error("[Admin] Initial load error:", error);
+        setLoading(false); // Ensure loading is cleared even on error
       }
-    }
-  };
+    };
+    
+    initialLoad();
 
-  const loadPauseState = async () => {
-    try {
-      const apiBase = getApiBaseUrl();
-      const response = await fetch(`${apiBase}/api/admin/pause`, { cache: "no-store" });
-      if (response.ok) {
-        const data = await response.json();
-        setPauseState(data);
-      }
-    } catch (error) {
-      console.error("Failed to load pause state:", error);
-    }
-  };
+    const interval = setInterval(() => {
+      loadStats();
+      checkSiteStatus().catch(err => console.error("[Admin] Site status check failed:", err));
+      loadPauseState().catch(err => console.error("[Admin] Pause state load failed:", err));
+      loadVideoPeriodStats().catch(err => console.error("[Admin] Video period stats failed:", err));
+      loadAudioPeriodStats().catch(err => console.error("[Admin] Audio period stats failed:", err));
+    }, 5000); // Refresh every 5 seconds for real-time updates
+
+    // Fallback timeout to ensure loading state is cleared
+    const fallbackTimeout = setTimeout(() => {
+      console.warn("[Admin] Loading timeout - clearing loading state");
+      setLoading(false);
+    }, 10000); // 10 second fallback
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(fallbackTimeout);
+    };
+  }, [searchParams, router, videoDateRange, videoCustomStartDate, videoCustomEndDate, audioDateRange, audioCustomStartDate, audioCustomEndDate, loadStats, checkSiteStatus, loadPauseState, loadVideoPeriodStats, loadAudioPeriodStats]);
 
   const handleAction = async (action: string) => {
     setActionLoading(action);
@@ -340,17 +501,39 @@ function AdminPanelContent() {
       } else if (action === "restart") {
         console.log("[Admin] Restarting service...");
         const apiBase = getApiBaseUrl();
-        const response = await fetch(`${apiBase}/api/admin/restart`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        });
-        const data = await response.json();
-        if (data.success) {
-          console.log("[Admin] Restart initiated successfully");
-          alert("Service restart initiated successfully!");
-        } else {
-          console.error("[Admin] Restart failed:", data.error);
-          alert(`Restart failed: ${data.error}`);
+        try {
+          const response = await fetch(`${apiBase}/api/admin/restart`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          });
+          
+          if (response.ok) {
+            try {
+              const data = await response.json();
+              if (data.success) {
+                console.log("[Admin] Restart initiated successfully");
+                alert("Service restart initiated successfully!");
+              } else {
+                console.error("[Admin] Restart failed:", data.error);
+                alert(`Restart failed: ${data.error || "Unknown error"}`);
+              }
+            } catch (parseError) {
+              console.error("[Admin] Failed to parse restart response:", parseError);
+              alert("Restart failed: Invalid response from server");
+            }
+          } else {
+            try {
+              const errorText = await response.text().catch(() => "Unknown error");
+              console.error("[Admin] Restart failed:", response.status, errorText.substring(0, 200));
+              alert(`Restart failed: ${response.status} ${errorText.substring(0, 100)}`);
+            } catch (textError) {
+              console.error("[Admin] Restart failed:", response.status);
+              alert(`Restart failed: ${response.status}`);
+            }
+          }
+        } catch (fetchError) {
+          console.error("[Admin] Restart request failed:", fetchError);
+          alert(`Restart failed: ${fetchError instanceof Error ? fetchError.message : "Network error"}`);
         }
       }
     } catch (error) {
@@ -381,7 +564,8 @@ function AdminPanelContent() {
               {lastUpdated && (
                 <p className="text-gray-400 mt-1 text-xs">
                   Last updated: {lastUpdated.toLocaleTimeString()}
-                  {updateFlash && <span className="ml-2 text-green-400 animate-pulse">● New downloads!</span>}
+                  {updateFlash && <span className="ml-2 text-green-400 animate-pulse">● New activity detected!</span>}
+                  <span className="ml-2 text-gray-500">(Auto-refresh: 5s)</span>
                 </p>
               )}
             </div>
@@ -409,19 +593,40 @@ function AdminPanelContent() {
                           message: "We'll be back soon!" 
                         }),
                       });
-                      const data = await response.json();
-                      if (data.success) {
-                        // Confirm the state (already updated optimistically)
-                        setPauseState({ paused: newPausedState, message: data.message });
+                      
+                      if (response.ok) {
+                        try {
+                          const data = await response.json();
+                          if (data.success) {
+                            // Confirm the state (already updated optimistically)
+                            setPauseState({ paused: newPausedState, message: data.message });
+                          } else {
+                            // Revert on failure
+                            setPauseState({ paused: !newPausedState, message: pauseState.message });
+                            alert(`Toggle failed: ${data.error || "Unknown error"}`);
+                          }
+                        } catch (parseError) {
+                          // Revert on parse error
+                          setPauseState({ paused: !newPausedState, message: pauseState.message });
+                          console.error("[Admin] Failed to parse pause toggle response:", parseError);
+                          alert("Toggle failed: Invalid response from server");
+                        }
                       } else {
-                        // Revert on failure
+                        // Revert on non-OK response
                         setPauseState({ paused: !newPausedState, message: pauseState.message });
-                        alert(`Toggle failed: ${data.error}`);
+                        try {
+                          const errorText = await response.text().catch(() => "Unknown error");
+                          console.error("[Admin] Pause toggle failed:", response.status, errorText.substring(0, 200));
+                          alert(`Toggle failed: ${response.status} ${errorText.substring(0, 100)}`);
+                        } catch (textError) {
+                          console.error("[Admin] Pause toggle failed:", response.status);
+                          alert(`Toggle failed: ${response.status}`);
+                        }
                       }
                     } catch (error) {
                       // Revert on error
                       setPauseState({ paused: !newPausedState, message: pauseState.message });
-                      console.error("Toggle failed:", error);
+                      console.error("[Admin] Toggle failed:", error);
                       alert(`Toggle failed: ${error instanceof Error ? error.message : "Unknown error"}`);
                     } finally {
                       setActionLoading(null);
@@ -470,6 +675,13 @@ function AdminPanelContent() {
                 <div className="text-xl sm:text-2xl font-bold text-[#fb923c]">{stats.video.toLocaleString()}</div>
                 {previousStats && stats.video > previousStats.video && (
                   <div className="text-green-400 text-xs mt-1 animate-pulse">+{stats.video - previousStats.video} new</div>
+                )}
+              </div>
+              <div>
+                <div className="text-gray-400 text-xs sm:text-sm">Today</div>
+                <div className="text-lg sm:text-xl font-bold text-[#fb923c]">{stats.videoToday.toLocaleString()}</div>
+                {previousStats && stats.videoToday > previousStats.videoToday && (
+                  <div className="text-green-400 text-xs mt-1 animate-pulse">+{stats.videoToday - previousStats.videoToday} new</div>
                 )}
               </div>
               <div>
@@ -522,6 +734,13 @@ function AdminPanelContent() {
                 <div className="text-xl sm:text-2xl font-bold text-[#fb923c]">{stats.audio.toLocaleString()}</div>
                 {previousStats && stats.audio > previousStats.audio && (
                   <div className="text-green-400 text-xs mt-1 animate-pulse">+{stats.audio - previousStats.audio} new</div>
+                )}
+              </div>
+              <div>
+                <div className="text-gray-400 text-xs sm:text-sm">Today</div>
+                <div className="text-lg sm:text-xl font-bold text-[#fb923c]">{stats.audioToday.toLocaleString()}</div>
+                {previousStats && stats.audioToday > previousStats.audioToday && (
+                  <div className="text-green-400 text-xs mt-1 animate-pulse">+{stats.audioToday - previousStats.audioToday} new</div>
                 )}
               </div>
               <div>

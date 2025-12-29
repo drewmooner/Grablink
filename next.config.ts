@@ -12,7 +12,12 @@ const nextConfig: NextConfig = {
   // Turbopack configuration (Next.js 16 default)
   turbopack: {
     // Empty config - we handle FFmpeg path resolution manually at runtime
+    // Note: Turbopack has known issues with Google fonts, using webpack fallback
   },
+  
+  // Disable Turbopack for development to avoid font loading issues
+  // Use: npm run dev (uses webpack) or npm run dev -- --turbo (uses turbopack)
+  // For production builds, webpack is used by default
   
   // Webpack configuration for production builds (fallback)
   webpack: (config, { isServer }) => {

@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { withRateLimit } from "@/lib/middleware/rateLimit";
 
 // Note: Vercel Hobby plan limits maxDuration to 300 seconds
-// This route is on Railway (15 min timeout), but Vercel still builds it
+// This route works on Vercel serverless (10s timeout) and Railway (15 min timeout)
 // Set to 300 to satisfy Vercel's build requirements
 export const maxDuration = 300; // 5 minutes (Vercel Hobby plan limit)
 export const runtime = "nodejs";

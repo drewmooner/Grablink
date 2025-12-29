@@ -37,11 +37,11 @@ export async function GET(request: NextRequest) {
     let startAt = searchParams.get("startAt");
     let endAt = searchParams.get("endAt");
 
-    // Umami API requires date parameters - default to last 365 days if not provided
+    // Umami API requires date parameters - default to ALL events if not provided
     const now = Date.now();
     if (!startAt) {
-      // Default to 1 year ago if not specified
-      startAt = (now - 365 * 24 * 60 * 60 * 1000).toString();
+      // Default to beginning of time (0) to get ALL past events
+      startAt = "0";
     }
     if (!endAt) {
       endAt = now.toString();
@@ -83,6 +83,11 @@ export async function GET(request: NextRequest) {
           const events = eventsData.data || eventsData || [];
           const totalCount = eventsData.count || events.length;
           console.log("[Umami API] Events fetch successful, found", events.length, "events (total:", totalCount, ")");
+          console.log("[Umami API] Date range:", {
+            startAt: startAt === "0" ? "Beginning of time (ALL events)" : new Date(parseInt(startAt)).toISOString(),
+            endAt: new Date(parseInt(endAt)).toISOString(),
+            range: startAt === "0" ? "ALL PAST EVENTS" : `${Math.round((parseInt(endAt) - parseInt(startAt)) / (1000 * 60 * 60 * 24))} days`
+          });
 
           // Parse pageviews (eventType: 1) and custom events (eventType: 2 with eventName)
           let pageviews = 0;
@@ -96,34 +101,35 @@ export async function GET(request: NextRequest) {
 
           events.forEach((event: any) => {
             // eventType: 1 = pageview, eventType: 2 = custom event
-            if (event.eventType === 1) {
+            const eventType = event.eventType;
+            const eventName = event.eventName || event.name || "";
+            
+            if (eventType === 1) {
+              // Pageview event
               pageviews++;
-            } else if (event.eventType === 2) {
+            } else if (eventType === 2) {
               // Custom events have eventType: 2
-              if (event.eventName && event.eventName !== "") {
-                console.log("[Umami API] Found custom event:", event.eventName, "eventType:", event.eventType, "id:", event.id);
-                if (event.eventName === "Download Video") {
+              if (eventName && eventName.trim() !== "") {
+                const normalizedName = eventName.trim();
+                if (normalizedName === "Download Video") {
                   videoDownloads++;
-                } else if (event.eventName === "Download Audio") {
+                  console.log("[Umami API] ✓ Video download found - ID:", event.id);
+                } else if (normalizedName === "Download Audio") {
                   audioDownloads++;
-                } else {
-                  // Log other custom events for debugging
-                  console.log("[Umami API] Other custom event:", event.eventName);
+                  console.log("[Umami API] ✓ Audio download found - ID:", event.id);
                 }
-              } else {
-                // Log events with eventType 2 but no eventName
-                console.log("[Umami API] Event with eventType 2 but no eventName:", JSON.stringify(event, null, 2));
               }
-            } else {
-              // Log unexpected event types
-              console.log("[Umami API] Unexpected eventType:", event.eventType, "eventName:", event.eventName);
             }
           });
 
           // If there are more pages, fetch them (Umami API paginates at 20 per page)
-          if (totalCount > events.length && eventsData.pageSize) {
-            const totalPages = Math.ceil(totalCount / eventsData.pageSize);
-            console.log("[Umami API] Fetching additional pages. Total pages:", totalPages);
+          // IMPORTANT: Always fetch ALL pages to get accurate counts
+          let totalEventsProcessed = events.length;
+          
+          if (totalCount > events.length) {
+            const pageSize = eventsData.pageSize || 20;
+            const totalPages = Math.ceil(totalCount / pageSize);
+            console.log("[Umami API] Fetching additional pages. Total events:", totalCount, "Page size:", pageSize, "Total pages:", totalPages);
             
             for (let page = 2; page <= totalPages; page++) {
               try {
@@ -145,32 +151,99 @@ export async function GET(request: NextRequest) {
                 
                 if (pageResponse.ok) {
                   const pageData = await pageResponse.json();
-                  const pageEvents = pageData.data || [];
-                  console.log("[Umami API] Fetched page", page, "with", pageEvents.length, "events");
+                  const pageEvents = pageData.data || pageData || [];
+                  totalEventsProcessed += pageEvents.length;
+                  console.log("[Umami API] Fetched page", page, "/", totalPages, "with", pageEvents.length, "events (total processed:", totalEventsProcessed, "/", totalCount, ")");
                   
                   pageEvents.forEach((event: any) => {
-                    if (event.eventType === 1) {
+                    // eventType: 1 = pageview, eventType: 2 = custom event
+                    const eventType = event.eventType;
+                    const eventName = event.eventName || event.name || "";
+                    
+                    if (eventType === 1) {
                       pageviews++;
-                    } else if (event.eventType === 2 && event.eventName) {
-                      if (event.eventName === "Download Video") {
-                        videoDownloads++;
-                      } else if (event.eventName === "Download Audio") {
-                        audioDownloads++;
+                    } else if (eventType === 2) {
+                      // Custom events have eventType: 2
+                      if (eventName && eventName.trim() !== "") {
+                        const normalizedName = eventName.trim();
+                        if (normalizedName === "Download Video") {
+                          videoDownloads++;
+                        } else if (normalizedName === "Download Audio") {
+                          audioDownloads++;
+                        }
                       }
                     }
                   });
+                } else {
+                  const errorText = await pageResponse.text().catch(() => "Unknown error");
+                  console.error("[Umami API] Failed to fetch page", page, ":", pageResponse.status, errorText.substring(0, 200));
                 }
               } catch (error) {
                 console.error("[Umami API] Error fetching page", page, ":", error);
               }
             }
+            
+            console.log("[Umami API] Finished fetching all pages. Events processed:", totalEventsProcessed, "/", totalCount, "Final counts:", { pageviews, videoDownloads, audioDownloads });
+            
+            // Verify we processed all events
+            if (totalEventsProcessed < totalCount) {
+              console.warn("[Umami API] ⚠️ Warning: Processed", totalEventsProcessed, "events but total count is", totalCount, "- some events may be missing");
+            } else if (totalEventsProcessed > totalCount) {
+              console.warn("[Umami API] ⚠️ Warning: Processed", totalEventsProcessed, "events but total count is", totalCount, "- possible duplicate counting");
+            } else {
+              console.log("[Umami API] ✅ Successfully processed all", totalCount, "events");
+            }
+          } else {
+            console.log("[Umami API] ✅ All events fetched in single page:", totalCount);
           }
 
           results.events = eventsData;
           results.pageviews = pageviews;
           results.videoDownloads = videoDownloads;
           results.audioDownloads = audioDownloads;
-          console.log("[Umami API] Final parsed counts:", { pageviews, videoDownloads, audioDownloads });
+          results.totalEvents = totalCount;
+          results.eventsProcessed = totalEventsProcessed || events.length;
+          
+          // Safely parse date range for debugging
+          try {
+            const startAtNum = parseInt(startAt || "0", 10);
+            const endAtNum = parseInt(endAt || now.toString(), 10);
+            results.dateRange = {
+              startAt: startAtNum,
+              endAt: endAtNum,
+              startDate: new Date(startAtNum).toISOString(),
+              endDate: new Date(endAtNum).toISOString()
+            };
+          } catch (dateError) {
+            console.warn("[Umami API] Failed to parse date range:", dateError);
+            results.dateRange = {
+              startAt: parseInt(startAt || "0", 10) || 0,
+              endAt: parseInt(endAt || now.toString(), 10) || now
+            };
+          }
+          
+          console.log("[Umami API] Final parsed counts:", { 
+            pageviews, 
+            videoDownloads, 
+            audioDownloads, 
+            totalDownloads: videoDownloads + audioDownloads,
+            totalEvents: totalCount,
+            eventsProcessed: totalEventsProcessed || events.length,
+            dateRange: results.dateRange,
+            fetchingAllPastEvents: startAt === "0"
+          });
+          
+          // Log summary for all-time requests
+          if (startAt === "0") {
+            console.log("[Umami API] 📊 ALL-TIME STATS SUMMARY:", {
+              totalVideoDownloads: videoDownloads,
+              totalAudioDownloads: audioDownloads,
+              totalDownloads: videoDownloads + audioDownloads,
+              totalPageviews: pageviews,
+              totalEventsProcessed: totalEventsProcessed || events.length,
+              status: totalEventsProcessed === totalCount ? "✅ Complete" : "⚠️ Partial"
+            });
+          }
         } else {
           const errorText = await eventsResponse.text();
           console.error("[Umami API] Events fetch failed:", eventsResponse.status, errorText.substring(0, 500));
