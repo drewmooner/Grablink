@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: grablink
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: UMAMI_API_KEY
+        sync: false  # Set this in Render dashboard
+      - key: UMAMI_WEBSITE_ID
+        value: 5d7c0418-ad3d-43b6-be7e-b3ff326e86b7
+      - key: UMAMI_API_BASE_URL
+        value: https://api.umami.is/v1
+    healthCheckPath: /api/health
+    autoDeploy: true
+

@@ -31,10 +31,24 @@ export default function VideoDownloader() {
   const [pauseMessage, setPauseMessage] = useState<string>("We'll be back soon!");
   const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Get API base URL: use relative URLs (works on Vercel and localhost)
+  // Get API base URL: use Render backend when on Vercel, relative URLs for localhost
   const getApiBaseUrl = (): string => {
-    // Always use relative URLs - works on Vercel serverless and localhost
-    return "";
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname;
+      // If on Vercel (production), use Render backend URL
+      if (hostname === "grablink.cloud" || hostname.includes("grablink.cloud") || hostname.includes("vercel.app")) {
+        // Use Render backend URL from NEXT_PUBLIC env var (set in Vercel dashboard)
+        // This will be injected at build time
+        const renderBackendUrl = process.env.NEXT_PUBLIC_RENDER_BACKEND_URL;
+        if (renderBackendUrl) {
+          return renderBackendUrl;
+        }
+        // Fallback: if env var not set, return empty (will fail - user needs to set it)
+        console.warn("[VideoDownloader] NEXT_PUBLIC_RENDER_BACKEND_URL not set - API calls will fail");
+        return "";
+      }
+    }
+    return ""; // Relative URL for localhost
   };
 
   // Check pause state
