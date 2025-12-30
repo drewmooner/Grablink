@@ -12,6 +12,4 @@ jobs:
       - name: Trigger Render Deployment
         run: |
           curl -X POST "https://api.render.com/deploy/srv-d59i6e0gjchc73aok2l0?key=RDfENBCN888"
-        env:
-          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
 
