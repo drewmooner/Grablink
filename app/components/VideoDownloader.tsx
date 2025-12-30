@@ -35,29 +35,21 @@ export default function VideoDownloader() {
   const getApiBaseUrl = (): string => {
     if (typeof window !== "undefined") {
       const hostname = window.location.hostname;
-      // If on Vercel (production), use Render backend URL
-      if (hostname === "grablink.cloud" || hostname.includes("grablink.cloud") || hostname.includes("vercel.app")) {
-        // Use Render backend URL from NEXT_PUBLIC env var (set in Vercel dashboard)
-        // This will be injected at build time
-        const renderBackendUrl = process.env.NEXT_PUBLIC_RENDER_BACKEND_URL;
-        console.log("[VideoDownloader] Hostname:", hostname);
-        console.log("[VideoDownloader] Render backend URL from env:", renderBackendUrl);
-        
-        // Hardcoded fallback for Render backend (in case env var isn't set)
+      const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname.startsWith("192.168.") || hostname.startsWith("10.");
+      
+      // Always use Render backend in production (not localhost)
+      if (!isLocalhost) {
+        // Hardcoded Render backend URL - always use this in production
         const RENDER_BACKEND_URL = "https://grablink.onrender.com";
-        
-        if (renderBackendUrl) {
-          console.log("[VideoDownloader] ✅ Using Render backend from env:", renderBackendUrl);
-          return renderBackendUrl;
-        } else {
-          // Fallback to hardcoded Render URL if env var not available
-          console.warn("[VideoDownloader] ⚠️ NEXT_PUBLIC_RENDER_BACKEND_URL not set, using hardcoded fallback:", RENDER_BACKEND_URL);
-          console.warn("[VideoDownloader] Please set NEXT_PUBLIC_RENDER_BACKEND_URL in Vercel for production");
-          return RENDER_BACKEND_URL;
-        }
+        console.log("[VideoDownloader] 🌐 Production detected - Hostname:", hostname);
+        console.log("[VideoDownloader] ✅ Using Render backend:", RENDER_BACKEND_URL);
+        return RENDER_BACKEND_URL;
+      } else {
+        console.log("[VideoDownloader] 🏠 Localhost detected - using relative URLs");
+        return ""; // Relative URL for localhost
       }
     }
-    return ""; // Relative URL for localhost
+    return ""; // Fallback for SSR
   };
 
   // Check pause state
