@@ -37,11 +37,15 @@ function AdminPanelContent() {
         // Use Render backend URL from NEXT_PUBLIC env var (set in Vercel dashboard)
         // This will be injected at build time
         const renderBackendUrl = process.env.NEXT_PUBLIC_RENDER_BACKEND_URL;
+        console.log("[Admin] Hostname:", hostname);
+        console.log("[Admin] Render backend URL from env:", renderBackendUrl);
         if (renderBackendUrl) {
+          console.log("[Admin] Using Render backend:", renderBackendUrl);
           return renderBackendUrl;
         }
         // Fallback: if env var not set, return empty (will fail - user needs to set it)
-        console.warn("[Admin] NEXT_PUBLIC_RENDER_BACKEND_URL not set - API calls will fail");
+        console.error("[Admin] ❌ NEXT_PUBLIC_RENDER_BACKEND_URL not set! API calls will go to Vercel (which doesn't have Python/yt-dlp)");
+        console.error("[Admin] Please set NEXT_PUBLIC_RENDER_BACKEND_URL in Vercel and redeploy");
         return "";
       }
     }

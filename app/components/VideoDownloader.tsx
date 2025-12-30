@@ -40,11 +40,15 @@ export default function VideoDownloader() {
         // Use Render backend URL from NEXT_PUBLIC env var (set in Vercel dashboard)
         // This will be injected at build time
         const renderBackendUrl = process.env.NEXT_PUBLIC_RENDER_BACKEND_URL;
+        console.log("[VideoDownloader] Hostname:", hostname);
+        console.log("[VideoDownloader] Render backend URL from env:", renderBackendUrl);
         if (renderBackendUrl) {
+          console.log("[VideoDownloader] Using Render backend:", renderBackendUrl);
           return renderBackendUrl;
         }
         // Fallback: if env var not set, return empty (will fail - user needs to set it)
-        console.warn("[VideoDownloader] NEXT_PUBLIC_RENDER_BACKEND_URL not set - API calls will fail");
+        console.error("[VideoDownloader] ❌ NEXT_PUBLIC_RENDER_BACKEND_URL not set! API calls will go to Vercel (which doesn't have Python/yt-dlp)");
+        console.error("[VideoDownloader] Please set NEXT_PUBLIC_RENDER_BACKEND_URL in Vercel and redeploy");
         return "";
       }
     }
