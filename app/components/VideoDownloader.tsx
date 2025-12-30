@@ -42,14 +42,19 @@ export default function VideoDownloader() {
         const renderBackendUrl = process.env.NEXT_PUBLIC_RENDER_BACKEND_URL;
         console.log("[VideoDownloader] Hostname:", hostname);
         console.log("[VideoDownloader] Render backend URL from env:", renderBackendUrl);
+        
+        // Hardcoded fallback for Render backend (in case env var isn't set)
+        const RENDER_BACKEND_URL = "https://grablink.onrender.com";
+        
         if (renderBackendUrl) {
-          console.log("[VideoDownloader] Using Render backend:", renderBackendUrl);
+          console.log("[VideoDownloader] ✅ Using Render backend from env:", renderBackendUrl);
           return renderBackendUrl;
+        } else {
+          // Fallback to hardcoded Render URL if env var not available
+          console.warn("[VideoDownloader] ⚠️ NEXT_PUBLIC_RENDER_BACKEND_URL not set, using hardcoded fallback:", RENDER_BACKEND_URL);
+          console.warn("[VideoDownloader] Please set NEXT_PUBLIC_RENDER_BACKEND_URL in Vercel for production");
+          return RENDER_BACKEND_URL;
         }
-        // Fallback: if env var not set, return empty (will fail - user needs to set it)
-        console.error("[VideoDownloader] ❌ NEXT_PUBLIC_RENDER_BACKEND_URL not set! API calls will go to Vercel (which doesn't have Python/yt-dlp)");
-        console.error("[VideoDownloader] Please set NEXT_PUBLIC_RENDER_BACKEND_URL in Vercel and redeploy");
-        return "";
       }
     }
     return ""; // Relative URL for localhost

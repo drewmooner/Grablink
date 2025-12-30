@@ -39,14 +39,19 @@ function AdminPanelContent() {
         const renderBackendUrl = process.env.NEXT_PUBLIC_RENDER_BACKEND_URL;
         console.log("[Admin] Hostname:", hostname);
         console.log("[Admin] Render backend URL from env:", renderBackendUrl);
+        
+        // Hardcoded fallback for Render backend (in case env var isn't set)
+        const RENDER_BACKEND_URL = "https://grablink.onrender.com";
+        
         if (renderBackendUrl) {
-          console.log("[Admin] Using Render backend:", renderBackendUrl);
+          console.log("[Admin] ✅ Using Render backend from env:", renderBackendUrl);
           return renderBackendUrl;
+        } else {
+          // Fallback to hardcoded Render URL if env var not available
+          console.warn("[Admin] ⚠️ NEXT_PUBLIC_RENDER_BACKEND_URL not set, using hardcoded fallback:", RENDER_BACKEND_URL);
+          console.warn("[Admin] Please set NEXT_PUBLIC_RENDER_BACKEND_URL in Vercel for production");
+          return RENDER_BACKEND_URL;
         }
-        // Fallback: if env var not set, return empty (will fail - user needs to set it)
-        console.error("[Admin] ❌ NEXT_PUBLIC_RENDER_BACKEND_URL not set! API calls will go to Vercel (which doesn't have Python/yt-dlp)");
-        console.error("[Admin] Please set NEXT_PUBLIC_RENDER_BACKEND_URL in Vercel and redeploy");
-        return "";
       }
     }
     return ""; // Relative URL for localhost
