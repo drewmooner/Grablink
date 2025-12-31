@@ -344,7 +344,7 @@ export default function VideoDownloader() {
     downloadUrl: string,
     filename: string,
     fileSize: number
-  ) => {
+  ): Promise<void> => {
     // Start progress bar immediately
     setIsDownloading(true);
     setDownloadProgress(0);
