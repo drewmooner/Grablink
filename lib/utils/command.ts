@@ -201,8 +201,54 @@ export async function buildYtDlpCommand(
     parts.push("--sleep-subtitles", "1"); // Sleep 1 second for subtitles
     parts.push("--no-warnings"); // Reduce noise
   } else {
-    // Non-TikTok platforms
-    parts.push("--no-warnings");
+    // Non-TikTok platforms - add platform-specific options
+    const isYouTube = urlLower.includes("youtube.com") || urlLower.includes("youtu.be");
+    const isInstagram = urlLower.includes("instagram.com");
+    const isPinterest = urlLower.includes("pinterest.com");
+    const isVimeo = urlLower.includes("vimeo.com");
+    const isReddit = urlLower.includes("reddit.com");
+    const isTwitch = urlLower.includes("twitch.tv");
+    
+    // YouTube-specific options (handle age-restricted videos)
+    if (isYouTube) {
+      parts.push("--no-check-age"); // Don't check age restrictions
+      parts.push("--no-warnings");
+      parts.push("--extractor-args", "youtube:player_client=web"); // Use web client (no sign-in needed)
+    }
+    
+    // Instagram-specific options
+    if (isInstagram) {
+      parts.push("--no-warnings");
+      parts.push("--extractor-args", "instagram:webpage_download_timeout=60");
+    }
+    
+    // Pinterest-specific options
+    if (isPinterest) {
+      parts.push("--no-warnings");
+    }
+    
+    // Vimeo-specific options
+    if (isVimeo) {
+      parts.push("--no-warnings");
+      parts.push("--referer", "https://vimeo.com/");
+    }
+    
+    // Reddit-specific options
+    if (isReddit) {
+      parts.push("--no-warnings");
+      parts.push("--extractor-args", "reddit:webpage_download_timeout=60");
+    }
+    
+    // Twitch-specific options
+    if (isTwitch) {
+      parts.push("--no-warnings");
+      parts.push("--referer", "https://www.twitch.tv/");
+    }
+    
+    // Default for other platforms
+    if (!isYouTube && !isInstagram && !isPinterest && !isVimeo && !isReddit && !isTwitch) {
+      parts.push("--no-warnings");
+    }
   }
   
   // Speed optimizations - download fragments concurrently for faster downloads

@@ -294,10 +294,12 @@ export default function VideoDownloader() {
       }
 
       if (downloadData.download?.url) {
-        // Use relative URL (works on Vercel and localhost)
+        // Always use full URL with Render backend in production
         const streamUrl = downloadData.download.url.startsWith('http')
           ? downloadData.download.url
           : `${getApiBaseUrl()}${downloadData.download.url}`;
+        
+        console.log("[VideoDownloader] Download URL:", streamUrl);
         
         // Mark that we attempted automatic download BEFORE triggering
         setAutoDownloadAttempted(true);
@@ -439,12 +441,12 @@ export default function VideoDownloader() {
         console.error("Failed to track Umami event:", error);
       }
       
-      // Reset progress after a short delay
+      // Reset progress and clear result after successful download
       setTimeout(() => {
         setIsDownloading(false);
         setDownloadProgress(0);
-        // Don't reset autoDownloadAttempted - keep it true to prevent showing the button
-        // The button should only show if download truly failed (which we'll detect differently)
+        setResult(null); // Clear result to prevent "download again" button
+        setAutoDownloadAttempted(false); // Reset for next download
       }, 1000);
     } catch (error) {
       console.error("Download error:", error);
