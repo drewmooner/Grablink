@@ -665,7 +665,11 @@ export default function VideoDownloader() {
     return (
       <div className="min-h-screen bg-[#1a1a1a] flex items-center justify-center relative">
         <div className="text-center px-4 z-50">
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-black mb-4 text-[#fb923c]" style={{ 
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-black mb-4 festive-glow" style={{
+            background: 'linear-gradient(135deg, #dc2626 0%, #16a34a 50%, #eab308 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text', 
             textShadow: '0 0 20px rgba(251, 146, 60, 0.5), 0 0 40px rgba(251, 146, 60, 0.3)'
           }}>
             Grablink
@@ -685,6 +689,33 @@ export default function VideoDownloader() {
 
   return (
     <div className="min-h-screen bg-[#1a1a1a] animated-background relative">
+      {/* 🎄 Christmas & New Year Festive Effects 🎉 */}
+      {[...Array(20)].map((_, i) => (
+        <div
+          key={`snowflake-${i}`}
+          className="snowflake"
+          style={{
+            left: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 5}s`,
+            animationDuration: `${5 + Math.random() * 5}s`,
+          }}
+        >
+          ❄
+        </div>
+      ))}
+      {[...Array(15)].map((_, i) => (
+        <div
+          key={`sparkle-${i}`}
+          className="sparkle"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 2}s`,
+            animationDuration: `${1.5 + Math.random() * 1}s`,
+          }}
+        />
+      ))}
+      
       {/* Floating Orbs */}
       <div className="floating-orb floating-orb-1"></div>
       <div className="floating-orb floating-orb-2"></div>
@@ -839,6 +870,7 @@ export default function VideoDownloader() {
             </div>
             <p className="text-xs text-[#fb923c]/70 mt-1 hidden xs:block">
               Paste URL anywhere on the page to auto-fill • Auto-scans when valid URL detected
+              <span className="ml-2 festive-glow">🎄✨🎉</span>
             </p>
           </div>
 
@@ -921,7 +953,7 @@ export default function VideoDownloader() {
           <button
             onClick={handleDownload}
             disabled={loading || !url.trim() || !videoInfo?.success || scanning}
-            className="w-full py-3 sm:py-3.5 md:py-4 text-sm sm:text-base gradient-bg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg sm:rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02] disabled:transform-none disabled:hover:scale-100"
+            className="w-full py-3 sm:py-3.5 md:py-4 text-sm sm:text-base gradient-bg festive-border hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg sm:rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02] disabled:transform-none disabled:hover:scale-100"
           >
             {loading ? (
               <>

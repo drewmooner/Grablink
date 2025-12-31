@@ -3,8 +3,11 @@
 :root {
   --background: #1a1a1a;
   --foreground: #ededed;
-  --gradient-start: #fb923c;
-  --gradient-end: #1a1a1a;
+  /* Christmas & New Year Festive Colors */
+  --gradient-start: #dc2626; /* Red */
+  --gradient-mid: #16a34a; /* Green */
+  --gradient-end: #eab308; /* Gold */
+  --gradient-fallback: #fb923c; /* Original orange fallback */
 }
 
 @theme inline {
@@ -143,9 +146,24 @@ body {
   filter: drop-shadow(0 0 20px rgba(251, 146, 60, 0.5));
 }
 
-/* Gradient background */
+/* Gradient background - Festive Christmas & New Year */
 .gradient-bg {
-  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  background: linear-gradient(135deg, 
+    var(--gradient-start) 0%, 
+    var(--gradient-mid) 50%, 
+    var(--gradient-end) 100%
+  );
+  background-size: 200% 200%;
+  animation: festiveGradient 3s ease infinite;
+}
+
+@keyframes festiveGradient {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 /* Hover effects */
@@ -1024,4 +1042,79 @@ body {
   bottom: 20%;
   left: 50%;
   animation: float 22s ease-in-out infinite;
+}
+
+/* 🎄 Christmas & New Year Festive Effects 🎉 */
+@keyframes snowflake {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Snowflakes */
+.snowflake {
+  position: absolute;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1em;
+  font-family: Arial, sans-serif;
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+  animation: snowflake linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Sparkles/Stars for New Year */
+.sparkle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #eab308;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #eab308, 0 0 12px #eab308;
+  animation: sparkle 2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Festive glow effect */
+.festive-glow {
+  text-shadow: 
+    0 0 10px rgba(220, 38, 38, 0.8),
+    0 0 20px rgba(22, 163, 74, 0.6),
+    0 0 30px rgba(234, 179, 8, 0.4);
+  animation: twinkle 2s ease-in-out infinite;
+}
+
+/* Festive border glow */
+.festive-border {
+  box-shadow: 
+    0 0 10px rgba(220, 38, 38, 0.5),
+    0 0 20px rgba(22, 163, 74, 0.3),
+    0 0 30px rgba(234, 179, 8, 0.2);
+  animation: twinkle 3s ease-in-out infinite;
 }
