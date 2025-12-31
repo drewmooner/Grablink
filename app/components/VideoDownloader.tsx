@@ -240,6 +240,7 @@ export default function VideoDownloader() {
     setLoading(true);
     setError(null);
     setResult(null);
+    setAutoDownloadAttempted(false); // Reset when starting new download
 
     try {
       // Download (video info already scanned)
@@ -310,7 +311,16 @@ export default function VideoDownloader() {
           streamUrl,
           downloadData.video?.filename || "video",
           downloadData.video?.size || 0
-        );
+        ).then(() => {
+          // Clear result immediately after download completes to prevent "download again" button
+          setResult(null);
+        }).catch(() => {
+          // On error, also clear result
+          setResult(null);
+        });
+      } else {
+        // No download URL - clear result immediately
+        setResult(null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -441,13 +451,16 @@ export default function VideoDownloader() {
         console.error("Failed to track Umami event:", error);
       }
       
-      // Reset progress and clear result after successful download
+      // Clear result IMMEDIATELY after successful download to prevent "download again" button
+      setResult(null);
+      
+      // Reset progress after a short delay (for visual feedback)
       setTimeout(() => {
         setIsDownloading(false);
         setDownloadProgress(0);
-        setResult(null); // Clear result to prevent "download again" button
-        setAutoDownloadAttempted(false); // Reset for next download
-      }, 1000);
+        // Keep autoDownloadAttempted true to prevent button from showing
+        // Only reset when user starts a new download
+      }, 300);
     } catch (error) {
       console.error("Download error:", error);
       setIsDownloading(false);
@@ -1126,7 +1139,7 @@ export default function VideoDownloader() {
                 </div>
               )}
               
-              {result.downloadUrl && !isDownloading && !autoDownloadAttempted && downloadProgress === 0 && (
+              {result?.downloadUrl && !isDownloading && !autoDownloadAttempted && downloadProgress === 0 && result?.success && (
                 <button
                   onClick={() => {
                     setAutoDownloadAttempted(true);
