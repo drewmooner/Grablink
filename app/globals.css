@@ -146,24 +146,9 @@ body {
   filter: drop-shadow(0 0 20px rgba(251, 146, 60, 0.5));
 }
 
-/* Gradient background - Festive Christmas & New Year */
+/* Gradient background */
 .gradient-bg {
-  background: linear-gradient(135deg, 
-    var(--gradient-start) 0%, 
-    var(--gradient-mid) 50%, 
-    var(--gradient-end) 100%
-  );
-  background-size: 200% 200%;
-  animation: festiveGradient 3s ease infinite;
-}
-
-@keyframes festiveGradient {
-  0%, 100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
 }
 
 /* Hover effects */

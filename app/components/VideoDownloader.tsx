@@ -789,17 +789,55 @@ export default function VideoDownloader() {
       <div className="container mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 max-w-4xl relative z-10">
         {/* Header */}
         <div className="text-center mb-6 sm:mb-8 animate-fadeIn relative">
-          <h1 className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl font-black mb-2 sm:mb-3 festive-glow animate-slideIn relative z-20" style={{ 
-            background: 'linear-gradient(135deg, #dc2626 0%, #16a34a 50%, #eab308 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            filter: 'drop-shadow(0 0 10px rgba(220, 38, 38, 0.4))'
+          {/* Christmas Hat */}
+          <div className="flex justify-center mb-2 animate-fadeIn" style={{ animationDelay: '0s' }}>
+            <svg 
+              width="80" 
+              height="60" 
+              viewBox="0 0 100 80" 
+              className="drop-shadow-lg"
+              style={{ filter: 'drop-shadow(0 4px 8px rgba(220, 38, 38, 0.4))' }}
+            >
+              {/* Hat Base (Red) */}
+              <path 
+                d="M20 50 Q50 20 80 50 L75 70 L25 70 Z" 
+                fill="#dc2626" 
+                stroke="#b91c1c" 
+                strokeWidth="1"
+              />
+              {/* White Fur Trim */}
+              <path 
+                d="M25 70 Q50 60 75 70" 
+                fill="#ffffff" 
+                stroke="#e5e5e5" 
+                strokeWidth="0.5"
+              />
+              {/* Pom Pom (White) */}
+              <circle 
+                cx="20" 
+                cy="50" 
+                r="8" 
+                fill="#ffffff" 
+                stroke="#e5e5e5" 
+                strokeWidth="0.5"
+              />
+              {/* Pom Pom Highlight */}
+              <circle 
+                cx="18" 
+                cy="48" 
+                r="3" 
+                fill="#f0f0f0"
+              />
+            </svg>
+          </div>
+          <h1 className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl font-black mb-2 sm:mb-3 text-[#fb923c] animate-slideIn relative z-20" style={{ 
+            textShadow: '0 0 20px rgba(251, 146, 60, 0.5), 0 0 40px rgba(251, 146, 60, 0.3), 0 4px 15px rgba(0, 0, 0, 0.4)',
+            filter: 'drop-shadow(0 0 10px rgba(251, 146, 60, 0.4))'
           }}>
-            Grablink <span className="text-3xl sm:text-4xl md:text-5xl">🎄✨</span>
+            Grablink
           </h1>
           <p className="text-sm xs:text-base sm:text-lg text-white/80 font-medium tracking-tight animate-fadeIn px-2" style={{ animationDelay: '0.1s' }}>
-            Save access; always on <span className="festive-glow">🎉</span>
+            Save access; always on
           </p>
         </div>
 
@@ -956,7 +994,7 @@ export default function VideoDownloader() {
           <button
             onClick={handleDownload}
             disabled={loading || !url.trim() || !videoInfo?.success || scanning}
-            className="w-full py-3 sm:py-3.5 md:py-4 text-sm sm:text-base gradient-bg festive-border hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg sm:rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02] disabled:transform-none disabled:hover:scale-100"
+            className="w-full py-3 sm:py-3.5 md:py-4 text-sm sm:text-base gradient-bg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg sm:rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02] disabled:transform-none disabled:hover:scale-100"
           >
             {loading ? (
               <>
