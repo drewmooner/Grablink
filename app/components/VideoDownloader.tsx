@@ -702,29 +702,16 @@ export default function VideoDownloader() {
 
   return (
     <div className="min-h-screen bg-[#1a1a1a] animated-background relative">
-      {/* 🎄 Christmas & New Year Festive Effects 🎉 */}
-      {[...Array(20)].map((_, i) => (
+      {/* Subtle Snowflakes - More Elegant */}
+      {[...Array(8)].map((_, i) => (
         <div
           key={`snowflake-${i}`}
-          className="snowflake"
+          className="snowflake-elegant"
           style={{
             left: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 5}s`,
-            animationDuration: `${5 + Math.random() * 5}s`,
-          }}
-        >
-          ❄
-        </div>
-      ))}
-      {[...Array(15)].map((_, i) => (
-        <div
-          key={`sparkle-${i}`}
-          className="sparkle"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 2}s`,
-            animationDuration: `${1.5 + Math.random() * 1}s`,
+            animationDelay: `${Math.random() * 8}s`,
+            animationDuration: `${8 + Math.random() * 4}s`,
+            opacity: 0.3 + Math.random() * 0.3,
           }}
         />
       ))}
@@ -802,52 +789,94 @@ export default function VideoDownloader() {
       <div className="container mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 max-w-4xl relative z-10">
         {/* Header */}
         <div className="text-center mb-6 sm:mb-8 animate-fadeIn relative">
-          {/* Christmas Hat */}
-          <div className="flex justify-center mb-2 animate-fadeIn" style={{ animationDelay: '0s' }}>
-            <svg 
-              width="80" 
-              height="60" 
-              viewBox="0 0 100 80" 
-              className="drop-shadow-lg"
-              style={{ filter: 'drop-shadow(0 4px 8px rgba(220, 38, 38, 0.4))' }}
-            >
-              {/* Hat Base (Red) */}
-              <path 
-                d="M20 50 Q50 20 80 50 L75 70 L25 70 Z" 
-                fill="#dc2626" 
-                stroke="#b91c1c" 
-                strokeWidth="1"
-              />
-              {/* White Fur Trim */}
-              <path 
-                d="M25 70 Q50 60 75 70" 
-                fill="#ffffff" 
-                stroke="#e5e5e5" 
-                strokeWidth="0.5"
-              />
-              {/* Pom Pom (White) */}
-              <circle 
-                cx="20" 
-                cy="50" 
-                r="8" 
-                fill="#ffffff" 
-                stroke="#e5e5e5" 
-                strokeWidth="0.5"
-              />
-              {/* Pom Pom Highlight */}
-              <circle 
-                cx="18" 
-                cy="48" 
-                r="3" 
-                fill="#f0f0f0"
-              />
-            </svg>
-          </div>
-          <h1 className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl font-black mb-2 sm:mb-3 text-[#fb923c] animate-slideIn relative z-20" style={{ 
+          <h1 className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl font-black mb-2 sm:mb-3 text-[#fb923c] animate-slideIn relative z-20 inline-block" style={{ 
             textShadow: '0 0 20px rgba(251, 146, 60, 0.5), 0 0 40px rgba(251, 146, 60, 0.3), 0 4px 15px rgba(0, 0, 0, 0.4)',
             filter: 'drop-shadow(0 0 10px rgba(251, 146, 60, 0.4))'
           }}>
-            Grablink
+            <span className="relative inline-block">
+              Grablin
+              <span className="relative inline-block">
+                K
+                {/* Professional Christmas Hat on K - Slanted */}
+                <svg 
+                  className="christmas-hat-on-k"
+                  width="50" 
+                  height="45" 
+                  viewBox="0 0 60 50"
+                  style={{
+                    position: 'absolute',
+                    top: '-35px',
+                    right: '-5px',
+                    transform: 'rotate(-15deg)',
+                    zIndex: 10,
+                  }}
+                >
+                  {/* Hat Cone (Red with gradient effect) */}
+                  <defs>
+                    <linearGradient id="hatGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#dc2626" />
+                      <stop offset="50%" stopColor="#b91c1c" />
+                      <stop offset="100%" stopColor="#991b1b" />
+                    </linearGradient>
+                    <filter id="hatShadow">
+                      <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
+                      <feOffset dx="1" dy="2" result="offsetblur"/>
+                      <feComponentTransfer>
+                        <feFuncA type="linear" slope="0.3"/>
+                      </feComponentTransfer>
+                      <feMerge>
+                        <feMergeNode/>
+                        <feMergeNode in="SourceGraphic"/>
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  {/* Main Hat Body */}
+                  <path 
+                    d="M15 35 Q30 8 45 35 L42 48 L18 48 Z" 
+                    fill="url(#hatGradient)" 
+                    stroke="#991b1b" 
+                    strokeWidth="0.8"
+                    filter="url(#hatShadow)"
+                  />
+                  {/* White Fur Trim - More Realistic */}
+                  <path 
+                    d="M18 48 Q30 42 42 48" 
+                    fill="#ffffff" 
+                    stroke="#f3f4f6" 
+                    strokeWidth="0.5"
+                    opacity="0.95"
+                  />
+                  {/* Fur Texture Lines */}
+                  <line x1="22" y1="46" x2="38" y2="46" stroke="#e5e7eb" strokeWidth="0.3" opacity="0.6"/>
+                  <line x1="24" y1="47" x2="36" y2="47" stroke="#e5e7eb" strokeWidth="0.3" opacity="0.4"/>
+                  {/* Pom Pom (White with highlight) */}
+                  <circle 
+                    cx="15" 
+                    cy="35" 
+                    r="6" 
+                    fill="#ffffff" 
+                    stroke="#f3f4f6" 
+                    strokeWidth="0.5"
+                    filter="url(#hatShadow)"
+                  />
+                  <circle 
+                    cx="13.5" 
+                    cy="33.5" 
+                    r="2.5" 
+                    fill="#f9fafb"
+                    opacity="0.8"
+                  />
+                  {/* Hat Highlight */}
+                  <path 
+                    d="M18 35 Q28 15 38 35" 
+                    fill="none" 
+                    stroke="#ef4444" 
+                    strokeWidth="1" 
+                    opacity="0.3"
+                  />
+                </svg>
+              </span>
+            </span>
           </h1>
           <p className="text-sm xs:text-base sm:text-lg text-white/80 font-medium tracking-tight animate-fadeIn px-2" style={{ animationDelay: '0.1s' }}>
             Save access; always on
