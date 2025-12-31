@@ -789,14 +789,17 @@ export default function VideoDownloader() {
       <div className="container mx-auto px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8 max-w-4xl relative z-10">
         {/* Header */}
         <div className="text-center mb-6 sm:mb-8 animate-fadeIn relative">
-          <h1 className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl font-black mb-2 sm:mb-3 text-[#fb923c] animate-slideIn relative z-20" style={{ 
-            textShadow: '0 0 20px rgba(251, 146, 60, 0.5), 0 0 40px rgba(251, 146, 60, 0.3), 0 4px 15px rgba(0, 0, 0, 0.4)',
-            filter: 'drop-shadow(0 0 10px rgba(251, 146, 60, 0.4))'
+          <h1 className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl font-black mb-2 sm:mb-3 festive-glow animate-slideIn relative z-20" style={{ 
+            background: 'linear-gradient(135deg, #dc2626 0%, #16a34a 50%, #eab308 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            filter: 'drop-shadow(0 0 10px rgba(220, 38, 38, 0.4))'
           }}>
-            Grablink
+            Grablink <span className="text-3xl sm:text-4xl md:text-5xl">🎄✨</span>
           </h1>
           <p className="text-sm xs:text-base sm:text-lg text-white/80 font-medium tracking-tight animate-fadeIn px-2" style={{ animationDelay: '0.1s' }}>
-            Save access; always on
+            Save access; always on <span className="festive-glow">🎉</span>
           </p>
         </div>
 
