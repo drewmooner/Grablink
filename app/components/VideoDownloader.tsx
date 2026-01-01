@@ -159,11 +159,37 @@ export default function VideoDownloader() {
       setScanning(true);
       scanTimeoutRef.current = setTimeout(async () => {
         try {
-          const response = await fetch(`${getApiBaseUrl()}/api/video/info`, {
+          const apiBase = getApiBaseUrl();
+          const apiUrl = `${apiBase}/api/video/info`;
+          
+          console.log("[VideoDownloader] Fetching video info from:", apiUrl);
+          
+          const response = await fetch(apiUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ url: url.trim() }),
           });
+
+          // Check if response is OK
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error("[VideoDownloader] API response not OK:", response.status, response.statusText, errorText);
+            setError(`Server error: ${response.status} ${response.statusText}. Please try again.`);
+            setVideoInfo(null);
+            setScanning(false);
+            return;
+          }
+
+          // Check if response is JSON
+          const contentType = response.headers.get("content-type");
+          if (!contentType || !contentType.includes("application/json")) {
+            const text = await response.text();
+            console.error("[VideoDownloader] Response is not JSON:", contentType, text.substring(0, 200));
+            setError("Invalid response from server. Please try again.");
+            setVideoInfo(null);
+            setScanning(false);
+            return;
+          }
 
           const data: VideoInfoResponse = await response.json();
 
