@@ -21,16 +21,63 @@ const execAsync = promisify(exec);
 // Temporary directory for downloads
 const TEMP_DIR = path.join(os.tmpdir(), "grablink-downloads");
 
+// Simple in-memory cache for video info (reduces redundant API calls)
+// Cache expires after 5 minutes to balance performance and freshness
+interface CacheEntry {
+  data: VideoInfoResponse;
+  timestamp: number;
+}
+
+const videoInfoCache = new Map<string, CacheEntry>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCacheKey(url: string): string {
+  // Normalize URL for cache key (remove trailing slashes, lowercase)
+  return url.trim().toLowerCase().replace(/\/+$/, "");
+}
+
+function getCachedInfo(url: string): VideoInfoResponse | null {
+  const key = getCacheKey(url);
+  const entry = videoInfoCache.get(key);
+  
+  if (entry && Date.now() - entry.timestamp < CACHE_TTL) {
+    console.log("[getVideoInfo] Cache hit for URL:", url);
+    return entry.data;
+  }
+  
+  if (entry) {
+    // Expired entry, remove it
+    videoInfoCache.delete(key);
+  }
+  
+  return null;
+}
+
+function setCachedInfo(url: string, data: VideoInfoResponse): void {
+  const key = getCacheKey(url);
+  videoInfoCache.set(key, {
+    data,
+    timestamp: Date.now(),
+  });
+  
+  // Limit cache size to prevent memory issues (keep last 100 entries)
+  if (videoInfoCache.size > 100) {
+    const oldestKey = Array.from(videoInfoCache.entries())
+      .sort((a, b) => a[1].timestamp - b[1].timestamp)[0][0];
+    videoInfoCache.delete(oldestKey);
+  }
+}
+
 // Sleep helper for retries
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Retry helper for TikTok with exponential backoff
+// Retry helper for TikTok with exponential backoff - optimized for speed
 async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   maxRetries: number = 3,
-  initialDelay: number = 2000,
+  initialDelay: number = 1500, // Reduced from 2000 to 1500 for faster retries
   isTikTok: boolean = false
 ): Promise<T> {
   let lastError: any;
@@ -38,16 +85,24 @@ async function retryWithBackoff<T>(
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       // Add random sleep before TikTok requests to avoid rate limiting
+      // Reduced delays for faster retries
       if (isTikTok && attempt > 0) {
-        const delay = initialDelay * Math.pow(2, attempt - 1) + Math.random() * 1000;
+        const delay = initialDelay * Math.pow(1.8, attempt - 1) + Math.random() * 500; // Reduced exponential base and random delay
         console.log(`[retryWithBackoff] TikTok retry ${attempt + 1}/${maxRetries}, waiting ${Math.round(delay)}ms`);
+        await sleep(delay);
+      } else if (!isTikTok && attempt > 0) {
+        // Faster retries for non-TikTok platforms
+        const delay = initialDelay * attempt; // Linear backoff for non-TikTok (faster)
         await sleep(delay);
       }
       
       return await fn();
     } catch (error) {
       lastError = error;
-      console.log(`[retryWithBackoff] Attempt ${attempt + 1}/${maxRetries} failed:`, error instanceof Error ? error.message : error);
+      // Only log on last attempt to reduce noise
+      if (attempt === maxRetries - 1) {
+        console.log(`[retryWithBackoff] All ${maxRetries} attempts failed:`, error instanceof Error ? error.message : error);
+      }
       
       if (attempt === maxRetries - 1) {
         throw lastError;
@@ -74,14 +129,21 @@ async function ensureTempDir(): Promise<void> {
 
 /**
  * Get video info using yt-dlp
+ * Optimized with caching to reduce redundant API calls
  */
 export async function getVideoInfo(url: string): Promise<VideoInfoResponse> {
+  // Check cache first (fast path)
+  const cached = getCachedInfo(url);
+  if (cached) {
+    return cached;
+  }
+  
   const platform = detectPlatform(url);
   console.log("[getVideoInfo] Detected platform:", platform, "URL:", url);
   console.log("[getVideoInfo] Is platform supported:", isPlatformSupported(platform));
 
   if (!isPlatformSupported(platform)) {
-    return {
+    const errorResponse: VideoInfoResponse = {
       success: false,
       platform,
       url,
@@ -96,6 +158,7 @@ export async function getVideoInfo(url: string): Promise<VideoInfoResponse> {
         message: `Platform "${platform}" is not supported. Supported platforms: TikTok, Instagram, YouTube, Twitter, Facebook, Pinterest, Vimeo, Twitch, and Reddit.`,
       },
     };
+    return errorResponse;
   }
 
   try {
@@ -138,9 +201,10 @@ export async function getVideoInfo(url: string): Promise<VideoInfoResponse> {
     let execError: any = null;
     
     // For TikTok, use retry logic with backoff
+    // Optimized timeouts: faster for non-TikTok platforms
     const executeCommand = async () => {
       const result = await execAsync(command, {
-        timeout: isTikTok ? 180000 : 120000, // 3 minutes for TikTok, 2 for others
+        timeout: isTikTok ? 180000 : 90000, // 3 minutes for TikTok, 90s for others (reduced from 120s)
         maxBuffer: 10 * 1024 * 1024, // 10MB buffer
       });
       return result;
@@ -415,7 +479,7 @@ export async function getVideoInfo(url: string): Promise<VideoInfoResponse> {
       };
     }
 
-    return {
+    const successResponse: VideoInfoResponse = {
       success: true,
       platform,
       url,
@@ -428,6 +492,11 @@ export async function getVideoInfo(url: string): Promise<VideoInfoResponse> {
         supportsStreaming: true,
       },
     };
+    
+    // Cache successful response
+    setCachedInfo(url, successResponse);
+    
+    return successResponse;
   } catch (error) {
     // Handle ExtractionError
     if (error instanceof ExtractionError) {
@@ -564,9 +633,10 @@ export async function downloadVideo(
   let stderr: string;
 
   // For TikTok, use retry logic with backoff
+  // Optimized: faster retries, better error handling
   const executeCommand = async () => {
     const result = await execAsync(command, {
-      timeout: isTikTok ? 900000 : 900000, // 15 minutes timeout
+      timeout: isTikTok ? 900000 : 600000, // 15 minutes for TikTok, 10 minutes for others (reduced from 15)
       maxBuffer: 100 * 1024 * 1024, // 100MB buffer
     });
     return result;
@@ -807,8 +877,8 @@ export async function downloadVideo(
   filePath = path.normalize(filePath);
 
   // Wait a bit for file to be fully written (yt-dlp might still be writing)
-  // Increase wait time and retries for slower systems
-  let retries = 10;
+  // Optimized: faster checks with reduced retries
+  let retries = 5; // Reduced from 10 to 5 for faster failure detection
   let fileExists = false;
   let lastError: Error | null = null;
   
@@ -821,7 +891,10 @@ export async function downloadVideo(
         console.log("[downloadVideo] File verified:", filePath, "Size:", stats.size, "bytes");
         break;
       } else {
-        console.log("[downloadVideo] File exists but is empty, waiting... (retries left:", retries, ")");
+        // Only log if we're on last retry to reduce noise
+        if (retries === 1) {
+          console.log("[downloadVideo] File exists but is empty, waiting...");
+        }
       }
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
@@ -829,9 +902,8 @@ export async function downloadVideo(
     }
     retries--;
     if (retries > 0) {
-      // Wait longer on each retry (exponential backoff)
-      const waitTime = 500 + (10 - retries) * 200; // 500ms, 700ms, 900ms, etc.
-      console.log("[downloadVideo] Waiting", waitTime, "ms before retry", (10 - retries + 1), "of 10");
+      // Faster retries: reduced wait times
+      const waitTime = 300 + (5 - retries) * 100; // 300ms, 400ms, 500ms, etc. (faster than before)
       await new Promise(resolve => setTimeout(resolve, waitTime));
     }
   }
@@ -857,25 +929,44 @@ export async function downloadVideo(
     );
   }
 
-  // Get metadata with proper URL escaping
+  // Get metadata with proper URL escaping - optimized for speed
+  // Skip metadata fetch if we already have it from download output
+  // This saves a second API call and speeds up downloads significantly
   let metadata: any;
   try {
-    const metadataCommand = await buildYtDlpCommand(url, {
-      json: true,
-      noDownload: true,
-    });
-    const { stdout: metadataStdout } = await execAsync(metadataCommand, {
-      timeout: 120000, // 2 minutes timeout
-      maxBuffer: 10 * 1024 * 1024,
-    });
-    metadata = JSON.parse(metadataStdout);
+    // Try to extract metadata from stdout/stderr first (faster, no extra API call)
+    const combinedOutput = stdout + "\n" + stderr;
+    const jsonMatch = combinedOutput.match(/\{[\s\S]*"title"[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        metadata = JSON.parse(jsonMatch[0]);
+        console.log("[downloadVideo] Extracted metadata from download output (fast path)");
+      } catch {
+        // Fall through to API call
+      }
+    }
+    
+    // If metadata extraction from output failed, fetch it via API (slower)
+    if (!metadata || !metadata.title) {
+      const metadataCommand = await buildYtDlpCommand(url, {
+        json: true,
+        noDownload: true,
+      });
+      const { stdout: metadataStdout } = await execAsync(metadataCommand, {
+        timeout: 60000, // Reduced from 120s to 60s for faster timeout
+        maxBuffer: 10 * 1024 * 1024,
+      });
+      metadata = JSON.parse(metadataStdout);
+      console.log("[downloadVideo] Fetched metadata via API (fallback path)");
+    }
   } catch (metadataError: any) {
-    // If metadata fetch fails, use basic metadata
+    // If metadata fetch fails, use basic metadata from file
     metadata = {
       title: "Unknown",
       uploader: "Unknown",
       ext: path.extname(filePath).slice(1) || "mp4",
     };
+    console.log("[downloadVideo] Using fallback metadata");
   }
 
   return { filePath, metadata };

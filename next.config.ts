@@ -9,17 +9,11 @@ const nextConfig: NextConfig = {
   },
   // For App Router, body size limits are set in route.ts files
   
-  // Turbopack configuration (Next.js 16 default)
-  turbopack: {
-    // Empty config - we handle FFmpeg path resolution manually at runtime
-    // Note: Turbopack has known issues with Google fonts, using webpack fallback
-  },
+  // Force webpack for builds to avoid Turbopack UTF-8 encoding bug
+  // Set empty turbopack config to allow webpack config to work
+  turbopack: {},
   
-  // Disable Turbopack for development to avoid font loading issues
-  // Use: npm run dev (uses webpack) or npm run dev -- --turbo (uses turbopack)
-  // For production builds, webpack is used by default
-  
-  // Webpack configuration for production builds (fallback)
+  // Webpack configuration for production builds
   webpack: (config, { isServer }) => {
     if (isServer) {
       // Externalize @ffmpeg-installer/ffmpeg to avoid bundling issues

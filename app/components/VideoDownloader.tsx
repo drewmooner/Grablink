@@ -30,6 +30,7 @@ export default function VideoDownloader() {
   const [isPaused, setIsPaused] = useState(false);
   const [pauseMessage, setPauseMessage] = useState<string>("We'll be back soon!");
   const scanTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const keepAliveIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Get API base URL: use Render backend when on Vercel, relative URLs for localhost
   const getApiBaseUrl = (): string => {
@@ -77,6 +78,33 @@ export default function VideoDownloader() {
       // The app will continue to work normally if pause state check fails
     }
   };
+
+  // Keep Render service awake (ping every 4 minutes to prevent spin-down)
+  useEffect(() => {
+    const keepAlive = () => {
+      const apiBase = getApiBaseUrl();
+      // Only ping if we're in production (not localhost)
+      if (apiBase && apiBase.includes('onrender.com')) {
+        fetch(`${apiBase}/api/health`, { 
+          method: 'GET',
+          cache: 'no-store',
+          // Silent fetch - don't log errors
+        }).catch(() => {
+          // Silently fail - this is just a keep-alive ping
+        });
+      }
+    };
+
+    // Ping immediately, then every 4 minutes (keeps service awake)
+    keepAlive();
+    keepAliveIntervalRef.current = setInterval(keepAlive, 4 * 60 * 1000); // 4 minutes
+
+    return () => {
+      if (keepAliveIntervalRef.current) {
+        clearInterval(keepAliveIntervalRef.current);
+      }
+    };
+  }, []);
 
   // Load history on mount and check pause state
   useEffect(() => {

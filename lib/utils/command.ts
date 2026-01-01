@@ -142,12 +142,14 @@ export async function buildYtDlpCommand(
   const urlLower = url.toLowerCase();
   const isTikTok = urlLower.includes("tiktok.com") || urlLower.includes("vm.tiktok.com") || urlLower.includes("vt.tiktok.com");
 
-  // Standard options for all platforms
-  parts.push("--socket-timeout", "60");
-  parts.push("--retries", "5");
-  parts.push("--fragment-retries", "5");
-  parts.push("--extractor-retries", "5");
+  // Standard options for all platforms - optimized for speed
+  parts.push("--socket-timeout", "30"); // Reduced from 60 to 30 for faster failures
+  parts.push("--retries", "3"); // Reduced from 5 to 3 for faster retries
+  parts.push("--fragment-retries", "3"); // Reduced from 5 to 3
+  parts.push("--extractor-retries", "3"); // Reduced from 5 to 3
   parts.push("--no-check-certificate");
+  parts.push("--no-playlist"); // Skip playlist processing (faster)
+  parts.push("--no-warnings"); // Reduce output noise
   
   // TikTok-specific options (2025 best practices)
   if (isTikTok) {
@@ -253,10 +255,17 @@ export async function buildYtDlpCommand(
   
   // Speed optimizations - download fragments concurrently for faster downloads
   // Use equals sign format to ensure proper argument parsing
-  parts.push("--concurrent-fragments=4"); // Download 4 fragments simultaneously (speeds up downloads significantly)
+  parts.push("--concurrent-fragments=8"); // Increased from 4 to 8 for faster downloads (optimal for most connections)
   parts.push("--no-part"); // Don't use .part files (faster, but less resumable)
   parts.push("--hls-prefer-native"); // Use native HLS downloader when possible (faster)
-  // Note: Removed --external-downloader-args as it can cause parsing issues
+  parts.push("--external-downloader", "ffmpeg"); // Use ffmpeg for faster HLS/DASH downloads when available
+  parts.push("--external-downloader-args", "-threads 4"); // Use 4 threads for ffmpeg (faster processing)
+  parts.push("--no-mtime"); // Don't set file modification time (faster)
+  parts.push("--no-write-info-json"); // Don't write info JSON (faster, we already have it)
+  parts.push("--no-write-thumbnail"); // Don't write thumbnail (faster)
+  parts.push("--no-write-description"); // Don't write description (faster)
+  parts.push("--no-write-annotations"); // Don't write annotations (faster)
+  parts.push("--no-write-subs"); // Don't write subtitles (faster, unless requested)
 
   // Add format option (format string may contain special characters like brackets)
   if (options.format) {

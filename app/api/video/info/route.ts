@@ -7,7 +7,7 @@ import { isValidUrl } from "@/lib/utils/url";
 import { withRateLimit } from "@/lib/middleware/rateLimit";
 
 // Increase body size limit for this route
-export const maxDuration = 180; // 3 minutes timeout (increased for slow platforms)
+export const maxDuration = 120; // 2 minutes timeout (optimized: reduced from 180s for faster failure detection)
 export const runtime = "nodejs";
 
 async function handleInfo(request: NextRequest) {
