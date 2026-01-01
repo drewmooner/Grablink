@@ -730,20 +730,6 @@ export default function VideoDownloader() {
 
   return (
     <div className="min-h-screen bg-[#1a1a1a] animated-background relative">
-      {/* Subtle Snowflakes - More Elegant */}
-      {[...Array(8)].map((_, i) => (
-        <div
-          key={`snowflake-${i}`}
-          className="snowflake-elegant"
-          style={{
-            left: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 8}s`,
-            animationDuration: `${8 + Math.random() * 4}s`,
-            opacity: 0.3 + Math.random() * 0.3,
-          }}
-        />
-      ))}
-      
       {/* Floating Orbs */}
       <div className="floating-orb floating-orb-1"></div>
       <div className="floating-orb floating-orb-2"></div>
@@ -821,90 +807,7 @@ export default function VideoDownloader() {
             textShadow: '0 0 20px rgba(251, 146, 60, 0.5), 0 0 40px rgba(251, 146, 60, 0.3), 0 4px 15px rgba(0, 0, 0, 0.4)',
             filter: 'drop-shadow(0 0 10px rgba(251, 146, 60, 0.4))'
           }}>
-            <span className="relative inline-block">
-              Grablin
-              <span className="relative inline-block">
-                K
-                {/* Professional Christmas Hat on K - Slanted */}
-                <svg 
-                  className="christmas-hat-on-k"
-                  width="50" 
-                  height="45" 
-                  viewBox="0 0 60 50"
-                  style={{
-                    position: 'absolute',
-                    top: '-35px',
-                    right: '-5px',
-                    transform: 'rotate(-15deg)',
-                    zIndex: 10,
-                  }}
-                >
-                  {/* Hat Cone (Red with gradient effect) */}
-                  <defs>
-                    <linearGradient id="hatGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#dc2626" />
-                      <stop offset="50%" stopColor="#b91c1c" />
-                      <stop offset="100%" stopColor="#991b1b" />
-                    </linearGradient>
-                    <filter id="hatShadow">
-                      <feGaussianBlur in="SourceAlpha" stdDeviation="2"/>
-                      <feOffset dx="1" dy="2" result="offsetblur"/>
-                      <feComponentTransfer>
-                        <feFuncA type="linear" slope="0.3"/>
-                      </feComponentTransfer>
-                      <feMerge>
-                        <feMergeNode/>
-                        <feMergeNode in="SourceGraphic"/>
-                      </feMerge>
-                    </filter>
-                  </defs>
-                  {/* Main Hat Body */}
-                  <path 
-                    d="M15 35 Q30 8 45 35 L42 48 L18 48 Z" 
-                    fill="url(#hatGradient)" 
-                    stroke="#991b1b" 
-                    strokeWidth="0.8"
-                    filter="url(#hatShadow)"
-                  />
-                  {/* White Fur Trim - More Realistic */}
-                  <path 
-                    d="M18 48 Q30 42 42 48" 
-                    fill="#ffffff" 
-                    stroke="#f3f4f6" 
-                    strokeWidth="0.5"
-                    opacity="0.95"
-                  />
-                  {/* Fur Texture Lines */}
-                  <line x1="22" y1="46" x2="38" y2="46" stroke="#e5e7eb" strokeWidth="0.3" opacity="0.6"/>
-                  <line x1="24" y1="47" x2="36" y2="47" stroke="#e5e7eb" strokeWidth="0.3" opacity="0.4"/>
-                  {/* Pom Pom (White with highlight) */}
-                  <circle 
-                    cx="15" 
-                    cy="35" 
-                    r="6" 
-                    fill="#ffffff" 
-                    stroke="#f3f4f6" 
-                    strokeWidth="0.5"
-                    filter="url(#hatShadow)"
-                  />
-                  <circle 
-                    cx="13.5" 
-                    cy="33.5" 
-                    r="2.5" 
-                    fill="#f9fafb"
-                    opacity="0.8"
-                  />
-                  {/* Hat Highlight */}
-                  <path 
-                    d="M18 35 Q28 15 38 35" 
-                    fill="none" 
-                    stroke="#ef4444" 
-                    strokeWidth="1" 
-                    opacity="0.3"
-                  />
-                </svg>
-              </span>
-            </span>
+            Grablink
           </h1>
           <p className="text-sm xs:text-base sm:text-lg text-white/80 font-medium tracking-tight animate-fadeIn px-2" style={{ animationDelay: '0.1s' }}>
             Save access; always on
@@ -981,7 +884,6 @@ export default function VideoDownloader() {
             </div>
             <p className="text-xs text-[#fb923c]/70 mt-1 hidden xs:block">
               Paste URL anywhere on the page to auto-fill • Auto-scans when valid URL detected
-              <span className="ml-2 festive-glow">🎄✨🎉</span>
             </p>
           </div>
 
