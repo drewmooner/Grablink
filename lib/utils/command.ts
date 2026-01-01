@@ -213,7 +213,8 @@ export async function buildYtDlpCommand(
     
     // YouTube-specific options (handle age-restricted videos)
     if (isYouTube) {
-      parts.push("--no-check-age"); // Don't check age restrictions
+      // Note: yt-dlp handles age-restricted videos automatically
+      // --no-check-age is not a valid option, removed
       parts.push("--no-warnings");
       parts.push("--extractor-args", "youtube:player_client=web"); // Use web client (no sign-in needed)
     }
